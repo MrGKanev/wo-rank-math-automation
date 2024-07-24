@@ -20,14 +20,13 @@ if (!defined('ABSPATH')) {
 add_action('admin_menu', 'wrms_add_admin_menu');
 function wrms_add_admin_menu()
 {
-    add_menu_page(
+    add_submenu_page(
+        'tools.php', // Parent slug
         'WooCommerce RankMath Sync', // Page title
         'RankMath Sync', // Menu title
         'manage_options', // Capability
         'woocommerce-rankmath-sync', // Menu slug
-        'wrms_admin_page', // Callback function
-        'dashicons-update', // Icon
-        20 // Position
+        'wrms_admin_page' // Callback function
     );
 }
 
@@ -227,6 +226,7 @@ function wrms_bulk_remove()
             delete_post_meta($product_id, 'rank_math_title');
             delete_post_meta($product_id, 'rank_math_description');
             delete_post_meta($product_id, 'rank_math_focus_keyword');
+            delete_post_meta($product_id, 'rank_math_description'); // Ensuring meta description is removed
             delete_post_meta($product_id, '_wrms_synced'); // Unmark as synced
         }
     }
