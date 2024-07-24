@@ -1,7 +1,7 @@
 <?php
 /*
  * Plugin Name:             WooCommerce RankMath Sync
- * Plugin URI:              https://github.com/MrGKanev/StageGuard/
+ * Plugin URI:              https://github.com/MrGKanev/wo-rank-math-automation/
  * Description:             Copies WooCommerce product information to RankMath's meta information.
  * Version:                 0.0.1
  * Author:                  Gabriel Kanev
