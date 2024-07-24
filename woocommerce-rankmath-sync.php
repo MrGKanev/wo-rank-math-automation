@@ -18,7 +18,8 @@ if (!defined('ABSPATH')) {
 
 // Add Admin Menu
 add_action('admin_menu', 'wrms_add_admin_menu');
-function wrms_add_admin_menu() {
+function wrms_add_admin_menu()
+{
     add_submenu_page(
         'tools.php', // Parent slug
         'WooCommerce RankMath Sync', // Page title
@@ -30,138 +31,145 @@ function wrms_add_admin_menu() {
 }
 
 // Admin Page Content
-function wrms_admin_page() {
-    ?>
+function wrms_admin_page()
+{
+?>
     <div class="wrap">
         <h1>WooCommerce RankMath Sync</h1>
         <button id="sync-products" class="button button-primary" style="margin-right: 10px; margin-bottom: 20px;">Sync Products</button>
         <button id="remove-rankmath-meta" class="button button-secondary" style="margin-bottom: 20px;">Remove RankMath Meta</button>
         <div id="sync-status" style="margin-top: 20px;">
-            <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none; margin-right: 10px;"/>
+            <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none; margin-right: 10px;" />
             <p id="sync-count"></p>
             <div id="sync-log" style="margin-top: 20px; height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px;"></div>
         </div>
     </div>
     <script type="text/javascript">
-    jQuery(document).ready(function($) {
-        $('#sync-products').on('click', function() {
-            syncProducts();
-        });
-
-        $('#remove-rankmath-meta').on('click', function() {
-            removeMeta();
-        });
-
-        function syncProducts() {
-            var totalProducts = 0;
-            var processedProducts = 0;
-
-            $.ajax({
-                url: ajaxurl,
-                method: 'POST',
-                data: {
-                    action: 'wrms_get_product_count'
-                },
-                success: function(response) {
-                    totalProducts = response.data.count;
-                    $('#sync-count').text('Processing 0 of ' + totalProducts + ' products');
-                    $('#sync-loader').show();
-                    $('#sync-log').html(''); // Clear log area
-
-                    processNextProduct();
-                }
+        jQuery(document).ready(function($) {
+            $('#sync-products').on('click', function() {
+                syncProducts();
             });
 
-            function processNextProduct() {
+            $('#remove-rankmath-meta').on('click', function() {
+                removeMeta();
+            });
+
+            function syncProducts() {
+                var totalProducts = 0;
+                var processedProducts = 0;
+
+                $('#sync-log').css('background-color', 'white'); // Set background color before processing starts
+
                 $.ajax({
                     url: ajaxurl,
                     method: 'POST',
                     data: {
-                        action: 'wrms_sync_next_product'
+                        action: 'wrms_get_product_count'
                     },
                     success: function(response) {
-                        if (response.success && response.data.processed > 0) {
-                            processedProducts += response.data.processed;
-                            $('#sync-count').text('Processing ' + processedProducts + ' of ' + totalProducts + ' products');
+                        totalProducts = response.data.count;
+                        $('#sync-count').text('Processing 0 of ' + totalProducts + ' products');
+                        $('#sync-loader').show();
+                        $('#sync-log').html(''); // Clear log area
 
-                            // Update log area
-                            $('#sync-log').append('<p>Processed product ' + processedProducts + ': ' + response.data.product.title + ' (ID: ' + response.data.product.id + ')</p>');
-
-                            if (processedProducts < totalProducts) {
-                                processNextProduct();
-                            } else {
-                                $('#sync-loader').hide();
-                                $('#sync-status').append('<p>Products synced successfully!</p>');
-                            }
-                        } else {
-                            $('#sync-loader').hide();
-                            $('#sync-status').append('<p>All products are already synced or an error occurred.</p>');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        $('#sync-loader').hide();
-                        $('#sync-status').append('<p>An error occurred.</p>');
+                        processNextProduct();
                     }
                 });
-            }
-        }
 
-        function removeMeta() {
-            var totalProducts = 0;
-            var processedProducts = 0;
+                function processNextProduct() {
+                    $.ajax({
+                        url: ajaxurl,
+                        method: 'POST',
+                        data: {
+                            action: 'wrms_sync_next_product'
+                        },
+                        success: function(response) {
+                            if (response.success && response.data.processed > 0) {
+                                processedProducts += response.data.processed;
+                                $('#sync-count').text('Processing ' + processedProducts + ' of ' + totalProducts + ' products');
 
-            $.ajax({
-                url: ajaxurl,
-                method: 'POST',
-                data: {
-                    action: 'wrms_get_product_count'
-                },
-                success: function(response) {
-                    totalProducts = response.data.count;
-                    $('#sync-count').text('Processing 0 of ' + totalProducts + ' products');
-                    $('#sync-loader').show();
-                    $('#sync-log').html(''); // Clear log area
+                                // Update log area
+                                $('#sync-log').append('<p>Processed product ' + processedProducts + ': ' + response.data.product.title + ' (ID: ' + response.data.product.id + ')</p>');
+                                $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight); // Scroll to bottom
 
-                    processNextProduct();
+                                if (processedProducts < totalProducts) {
+                                    processNextProduct();
+                                } else {
+                                    $('#sync-loader').hide();
+                                    $('#sync-status').append('<p>Products synced successfully!</p>');
+                                }
+                            } else {
+                                $('#sync-loader').hide();
+                                $('#sync-status').append('<p>All products are already synced or an error occurred.</p>');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            $('#sync-loader').hide();
+                            $('#sync-status').append('<p>An error occurred.</p>');
+                        }
+                    });
                 }
-            });
+            }
 
-            function processNextProduct() {
+            function removeMeta() {
+                var totalProducts = 0;
+                var processedProducts = 0;
+
+                $('#sync-log').css('background-color', 'white'); // Set background color before processing starts
+
                 $.ajax({
                     url: ajaxurl,
                     method: 'POST',
                     data: {
-                        action: 'wrms_remove_next_product'
+                        action: 'wrms_get_product_count'
                     },
                     success: function(response) {
-                        if (response.success && response.data.processed > 0) {
-                            processedProducts += response.data.processed;
-                            $('#sync-count').text('Processing ' + processedProducts + ' of ' + totalProducts + ' products');
+                        totalProducts = response.data.count;
+                        $('#sync-count').text('Processing 0 of ' + totalProducts + ' products');
+                        $('#sync-loader').show();
+                        $('#sync-log').html(''); // Clear log area
 
-                            // Update log area
-                            $('#sync-log').append('<p>Removed meta from product ' + processedProducts + ': ' + response.data.product.id + '</p>');
-
-                            if (processedProducts < totalProducts) {
-                                processNextProduct();
-                            } else {
-                                $('#sync-loader').hide();
-                                $('#sync-status').append('<p>RankMath meta information removed from all products!</p>');
-                            }
-                        } else {
-                            $('#sync-loader').hide();
-                            $('#sync-status').append('<p>All products have already had their meta removed or an error occurred.</p>');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        $('#sync-loader').hide();
-                        $('#sync-status').append('<p>An error occurred.</p>');
+                        processNextProduct();
                     }
                 });
+
+                function processNextProduct() {
+                    $.ajax({
+                        url: ajaxurl,
+                        method: 'POST',
+                        data: {
+                            action: 'wrms_remove_next_product'
+                        },
+                        success: function(response) {
+                            if (response.success && response.data.processed > 0) {
+                                processedProducts += response.data.processed;
+                                $('#sync-count').text('Processing ' + processedProducts + ' of ' + totalProducts + ' products');
+
+                                // Update log area
+                                $('#sync-log').append('<p>Removed meta from product ' + processedProducts + ': ' + response.data.product.id + '</p>');
+                                $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight); // Scroll to bottom
+
+                                if (processedProducts < totalProducts) {
+                                    processNextProduct();
+                                } else {
+                                    $('#sync-loader').hide();
+                                    $('#sync-status').append('<p>RankMath meta information removed from all products!</p>');
+                                }
+                            } else {
+                                $('#sync-loader').hide();
+                                $('#sync-status').append('<p>All products have already had their meta removed or an error occurred.</p>');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            $('#sync-loader').hide();
+                            $('#sync-status').append('<p>An error occurred.</p>');
+                        }
+                    });
+                }
             }
-        }
-    });
+        });
     </script>
-    <?php
+<?php
 }
 
 // Register AJAX actions
@@ -169,7 +177,8 @@ add_action('wp_ajax_wrms_sync_next_product', 'wrms_sync_next_product');
 add_action('wp_ajax_wrms_remove_next_product', 'wrms_remove_next_product');
 add_action('wp_ajax_wrms_get_product_count', 'wrms_get_product_count');
 
-function wrms_sync_next_product() {
+function wrms_sync_next_product()
+{
     $args = array(
         'post_type' => 'product',
         'posts_per_page' => 1,
@@ -209,7 +218,8 @@ function wrms_sync_next_product() {
     }
 }
 
-function wrms_remove_next_product() {
+function wrms_remove_next_product()
+{
     $args = array(
         'post_type' => 'product',
         'posts_per_page' => 1,
