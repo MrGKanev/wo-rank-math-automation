@@ -1,15 +1,10 @@
 <?php
 /*
- * Plugin Name:             WooCommerce RankMath Sync
- * Plugin URI:              https://github.com/MrGKanev/StageGuard/
- * Description:             Copies WooCommerce product information to RankMath's meta information.
- * Version:                 0.0.1
- * Author:                  Gabriel Kanev
- * Author URI:              https://gkanev.com
- * License:                 MIT
- * Requires at least:       6.0
- * Requires PHP:            7.4
- */
+Plugin Name: WooCommerce RankMath Sync
+Description: Copies WooCommerce product information to RankMath's meta information.
+Version: 1.1
+Author: Your Name
+*/
 
 // Exit if accessed directly.
 if (!defined('ABSPATH')) {
@@ -54,7 +49,7 @@ function wrms_admin_page()
                     },
                     beforeSend: function() {
                         $('#sync-loader').show();
-                        $('#sync-status').append('Syncing products...');
+                        $('#sync-status').html('Syncing products...');
                     },
                     success: function(response) {
                         $('#sync-loader').hide();
@@ -76,7 +71,7 @@ function wrms_admin_page()
                     },
                     beforeSend: function() {
                         $('#sync-loader').show();
-                        $('#sync-status').append('Removing meta information...');
+                        $('#sync-status').html('Removing meta information...');
                     },
                     success: function(response) {
                         $('#sync-loader').hide();
@@ -112,11 +107,13 @@ function wrms_bulk_sync()
         $title = $product_obj->get_name();
         $description = $product_obj->get_description();
         $short_description = $product_obj->get_short_description();
+        $seo_description = $short_description ? $short_description : wp_trim_words($description, 30, '...');
 
         if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
             update_post_meta($product_id, 'rank_math_title', $title);
             update_post_meta($product_id, 'rank_math_description', $description);
             update_post_meta($product_id, 'rank_math_focus_keyword', $title); // Using product title as focus keyword
+            update_post_meta($product_id, 'rank_math_description', $seo_description); // Adding SEO meta description
         }
     }
 
