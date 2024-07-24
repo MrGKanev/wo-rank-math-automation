@@ -68,31 +68,34 @@ function wrms_admin_page() {
                     $('#sync-loader').show();
                     $('#sync-log').html(''); // Clear log area
 
-                    processBatch();
+                    processNextProduct();
                 }
             });
 
-            function processBatch() {
+            function processNextProduct() {
                 $.ajax({
                     url: ajaxurl,
                     method: 'POST',
                     data: {
-                        action: 'wrms_bulk_sync'
+                        action: 'wrms_sync_next_product'
                     },
                     success: function(response) {
-                        processedProducts += response.data.processed;
-                        $('#sync-count').text('Processing ' + processedProducts + ' of ' + totalProducts + ' products');
+                        if (response.success && response.data.processed > 0) {
+                            processedProducts += response.data.processed;
+                            $('#sync-count').text('Processing ' + processedProducts + ' of ' + totalProducts + ' products');
 
-                        // Update log area
-                        response.data.products.forEach(function(product, index) {
-                            $('#sync-log').append('<p>Processed product ' + (processedProducts - response.data.processed + index + 1) + ': ' + product.title + ' (ID: ' + product.id + ')</p>');
-                        });
+                            // Update log area
+                            $('#sync-log').append('<p>Processed product ' + processedProducts + ': ' + response.data.product.title + ' (ID: ' + response.data.product.id + ')</p>');
 
-                        if (processedProducts < totalProducts) {
-                            processBatch();
+                            if (processedProducts < totalProducts) {
+                                processNextProduct();
+                            } else {
+                                $('#sync-loader').hide();
+                                $('#sync-status').append('<p>Products synced successfully!</p>');
+                            }
                         } else {
                             $('#sync-loader').hide();
-                            $('#sync-status').append('<p>Products synced successfully!</p>');
+                            $('#sync-status').append('<p>All products are already synced or an error occurred.</p>');
                         }
                     },
                     error: function(xhr, status, error) {
@@ -119,31 +122,34 @@ function wrms_admin_page() {
                     $('#sync-loader').show();
                     $('#sync-log').html(''); // Clear log area
 
-                    removeBatch();
+                    processNextProduct();
                 }
             });
 
-            function removeBatch() {
+            function processNextProduct() {
                 $.ajax({
                     url: ajaxurl,
                     method: 'POST',
                     data: {
-                        action: 'wrms_bulk_remove'
+                        action: 'wrms_remove_next_product'
                     },
                     success: function(response) {
-                        processedProducts += response.data.processed;
-                        $('#sync-count').text('Processing ' + processedProducts + ' of ' + totalProducts + ' products');
+                        if (response.success && response.data.processed > 0) {
+                            processedProducts += response.data.processed;
+                            $('#sync-count').text('Processing ' + processedProducts + ' of ' + totalProducts + ' products');
 
-                        // Update log area
-                        response.data.products.forEach(function(product, index) {
-                            $('#sync-log').append('<p>Removed meta from product ' + (processedProducts - response.data.processed + index + 1) + ': ' + product.id + '</p>');
-                        });
+                            // Update log area
+                            $('#sync-log').append('<p>Removed meta from product ' + processedProducts + ': ' + response.data.product.id + '</p>');
 
-                        if (processedProducts < totalProducts) {
-                            removeBatch();
+                            if (processedProducts < totalProducts) {
+                                processNextProduct();
+                            } else {
+                                $('#sync-loader').hide();
+                                $('#sync-status').append('<p>RankMath meta information removed from all products!</p>');
+                            }
                         } else {
                             $('#sync-loader').hide();
-                            $('#sync-status').append('<p>RankMath meta information removed from all products!</p>');
+                            $('#sync-status').append('<p>All products have already had their meta removed or an error occurred.</p>');
                         }
                     },
                     error: function(xhr, status, error) {
@@ -159,15 +165,14 @@ function wrms_admin_page() {
 }
 
 // Register AJAX actions
-add_action('wp_ajax_wrms_bulk_sync', 'wrms_bulk_sync');
-add_action('wp_ajax_wrms_bulk_remove', 'wrms_bulk_remove');
+add_action('wp_ajax_wrms_sync_next_product', 'wrms_sync_next_product');
+add_action('wp_ajax_wrms_remove_next_product', 'wrms_remove_next_product');
 add_action('wp_ajax_wrms_get_product_count', 'wrms_get_product_count');
 
-function wrms_bulk_sync() {
-    $batch_size = 10; // Number of products to process in each batch
+function wrms_sync_next_product() {
     $args = array(
         'post_type' => 'product',
-        'posts_per_page' => $batch_size,
+        'posts_per_page' => 1,
         'orderby' => 'ID',
         'order' => 'ASC',
         'fields' => 'ids',
@@ -181,36 +186,33 @@ function wrms_bulk_sync() {
     $products = get_posts($args);
 
     if (empty($products)) {
-        wp_send_json_success(array('processed' => 0, 'products' => []));
+        wp_send_json_success(array('processed' => 0));
         return;
     }
 
-    $processed_products = [];
-    foreach ($products as $index => $product_id) {
-        $product_obj = wc_get_product($product_id);
-        $title = $product_obj->get_name();
-        $description = $product_obj->get_description();
-        $short_description = $product_obj->get_short_description();
-        $seo_description = $short_description ? $short_description : wp_trim_words($description, 30, '...');
+    $product_id = $products[0];
+    $product_obj = wc_get_product($product_id);
+    $title = $product_obj->get_name();
+    $description = $product_obj->get_description();
+    $short_description = $product_obj->get_short_description();
+    $seo_description = $short_description ? $short_description : wp_trim_words($description, 30, '...');
 
-        if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
-            update_post_meta($product_id, 'rank_math_title', $title);
-            update_post_meta($product_id, 'rank_math_description', $description);
-            update_post_meta($product_id, 'rank_math_focus_keyword', $title); // Using product title as focus keyword
-            update_post_meta($product_id, 'rank_math_description', $seo_description); // Adding SEO meta description
-            update_post_meta($product_id, '_wrms_synced', 1); // Mark as synced
-            $processed_products[] = array('id' => $product_id, 'title' => $title); // Add to processed list
-        }
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        update_post_meta($product_id, 'rank_math_title', $title);
+        update_post_meta($product_id, 'rank_math_description', $description);
+        update_post_meta($product_id, 'rank_math_focus_keyword', $title); // Using product title as focus keyword
+        update_post_meta($product_id, 'rank_math_description', $seo_description); // Adding SEO meta description
+        update_post_meta($product_id, '_wrms_synced', 1); // Mark as synced
+        wp_send_json_success(array('processed' => 1, 'product' => array('id' => $product_id, 'title' => $title)));
+    } else {
+        wp_send_json_error(array('processed' => 0));
     }
-
-    wp_send_json_success(array('processed' => count($products), 'products' => $processed_products));
 }
 
-function wrms_bulk_remove() {
-    $batch_size = 10; // Number of products to process in each batch
+function wrms_remove_next_product() {
     $args = array(
         'post_type' => 'product',
-        'posts_per_page' => $batch_size,
+        'posts_per_page' => 1,
         'orderby' => 'ID',
         'order' => 'ASC',
         'fields' => 'ids',
@@ -224,22 +226,20 @@ function wrms_bulk_remove() {
     $products = get_posts($args);
 
     if (empty($products)) {
-        wp_send_json_success(array('processed' => 0, 'products' => []));
+        wp_send_json_success(array('processed' => 0));
         return;
     }
 
-    $processed_products = [];
-    foreach ($products as $index => $product_id) {
-        if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
-            delete_post_meta($product_id, 'rank_math_title');
-            delete_post_meta($product_id, 'rank_math_description');
-            delete_post_meta($product_id, 'rank_math_focus_keyword');
-            delete_post_meta($product_id, '_wrms_synced'); // Unmark as synced
-            $processed_products[] = array('id' => $product_id); // Add to processed list
-        }
+    $product_id = $products[0];
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        delete_post_meta($product_id, 'rank_math_title');
+        delete_post_meta($product_id, 'rank_math_description');
+        delete_post_meta($product_id, 'rank_math_focus_keyword');
+        delete_post_meta($product_id, '_wrms_synced'); // Unmark as synced
+        wp_send_json_success(array('processed' => 1, 'product' => array('id' => $product_id)));
+    } else {
+        wp_send_json_error(array('processed' => 0));
     }
-
-    wp_send_json_success(array('processed' => count($products), 'products' => $processed_products));
 }
 
 function wrms_get_product_count()
