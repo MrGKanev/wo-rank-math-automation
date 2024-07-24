@@ -56,8 +56,10 @@ function wrms_admin_page()
             <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none; margin-right: 10px;" />
             <p id="sync-count"></p>
             <div id="sync-log" class="sync-log"></div>
+            <div id="progress-bar" style="margin-top: 20px; height: 20px; width: 100%; background-color: #ccc;">
+                <div id="progress-bar-fill" style="height: 100%; width: 0%; background-color: #4caf50;"></div>
+            </div>
         </div>
     </div>
 <?php
 }
-?>

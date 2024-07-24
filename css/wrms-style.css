@@ -6,3 +6,16 @@
     border: 1px solid #ccc;
     padding: 10px;
 }
+
+#progress-bar {
+    margin-top: 20px;
+    height: 20px;
+    width: 100%;
+    background-color: #ccc;
+}
+
+#progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background-color: #4caf50;
+}
