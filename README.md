@@ -1,0 +1,1 @@
+# wo-rank-math-automation
