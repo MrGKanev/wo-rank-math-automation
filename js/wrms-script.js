@@ -11,8 +11,6 @@ jQuery(document).ready(function($) {
         var totalProducts = 0;
         var processedProducts = 0;
 
-        $('#sync-log').css('background-color', 'white'); // Set background color before processing starts
-
         $.ajax({
             url: ajaxurl,
             method: 'POST',
@@ -67,8 +65,6 @@ jQuery(document).ready(function($) {
     function removeMeta() {
         var totalProducts = 0;
         var processedProducts = 0;
-
-        $('#sync-log').css('background-color', 'white'); // Set background color before processing starts
 
         $.ajax({
             url: ajaxurl,

@@ -33,6 +33,17 @@ function wrms_add_admin_menu()
     );
 }
 
+// Enqueue scripts and styles
+add_action('admin_enqueue_scripts', 'wrms_enqueue_scripts');
+function wrms_enqueue_scripts($hook)
+{
+    if ($hook != 'tools_page_woocommerce-rankmath-sync') {
+        return;
+    }
+    wp_enqueue_script('wrms-script', plugin_dir_url(__FILE__) . 'js/wrms-script.js', array('jquery'), null, true);
+    wp_enqueue_style('wrms-style', plugin_dir_url(__FILE__) . 'css/wrms-style.css');
+}
+
 // Admin Page Content
 function wrms_admin_page()
 {
@@ -44,10 +55,9 @@ function wrms_admin_page()
         <div id="sync-status" style="margin-top: 20px;">
             <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none; margin-right: 10px;" />
             <p id="sync-count"></p>
-            <div id="sync-log" style="margin-top: 20px; height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px;"></div>
+            <div id="sync-log" class="sync-log"></div>
         </div>
     </div>
-    <script src="<?php echo plugin_dir_url(__FILE__); ?>js/wrms-script.js"></script>
 <?php
 }
 ?>

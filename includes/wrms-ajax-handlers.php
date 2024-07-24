@@ -97,3 +97,4 @@ function wrms_get_product_count()
 if (!function_exists('is_plugin_active')) {
     require_once(ABSPATH . 'wp-admin/includes/plugin.php');
 }
+?>
