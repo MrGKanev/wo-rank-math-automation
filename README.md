@@ -31,7 +31,7 @@ WooCommerce RankMath Sync is a WordPress plugin that can automatically copy WooC
 
 ## License
 
-This plugin is licensed under the  License. See the [LICENSE](LICENSE) file for more information.
+This plugin is licensed under the GNU v2 License. See the [LICENSE](LICENSE) file for more information.
 
 ## Contributing
 
