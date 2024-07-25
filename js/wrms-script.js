@@ -7,6 +7,32 @@ jQuery(document).ready(function($) {
         removeMeta();
     });
 
+    $('#wrms_auto_sync').on('change', function() {
+        updateAutoSync($(this).is(':checked'));
+    });
+
+    function updateAutoSync(isChecked) {
+        $.ajax({
+            url: ajaxurl,
+            method: 'POST',
+            data: {
+                action: 'wrms_update_auto_sync',
+                auto_sync: isChecked ? 1 : 0,
+                nonce: wrms_data.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Auto-sync setting updated successfully.');
+                } else {
+                    alert('Error updating auto-sync setting: ' + response.data.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error updating auto-sync setting: ' + error);
+            }
+        });
+    }
+
     function syncProducts() {
         var totalProducts = 0;
         var processedProducts = 0;
@@ -15,7 +41,8 @@ jQuery(document).ready(function($) {
             url: ajaxurl,
             method: 'POST',
             data: {
-                action: 'wrms_get_product_count'
+                action: 'wrms_get_product_count',
+                nonce: wrms_data.nonce
             },
             success: function(response) {
                 if (response.success) {
@@ -40,7 +67,8 @@ jQuery(document).ready(function($) {
                 url: ajaxurl,
                 method: 'POST',
                 data: {
-                    action: 'wrms_sync_next_product'
+                    action: 'wrms_sync_next_product',
+                    nonce: wrms_data.nonce
                 },
                 success: function(response) {
                     if (response.success && response.data.processed > 0) {
@@ -85,7 +113,8 @@ jQuery(document).ready(function($) {
             url: ajaxurl,
             method: 'POST',
             data: {
-                action: 'wrms_get_product_count'
+                action: 'wrms_get_product_count',
+                nonce: wrms_data.nonce
             },
             success: function(response) {
                 if (response.success) {
@@ -110,7 +139,8 @@ jQuery(document).ready(function($) {
                 url: ajaxurl,
                 method: 'POST',
                 data: {
-                    action: 'wrms_remove_next_product'
+                    action: 'wrms_remove_next_product',
+                    nonce: wrms_data.nonce
                 },
                 success: function(response) {
                     if (response.success && response.data.processed > 0) {

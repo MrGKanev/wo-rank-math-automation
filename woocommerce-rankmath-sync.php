@@ -3,7 +3,7 @@
  * Plugin Name:             WooCommerce RankMath Sync
  * Plugin URI:              https://github.com/MrGKanev/wo-rank-math-automation/
  * Description:             Copies WooCommerce product information to RankMath's meta information.
- * Version:                 0.0.1
+ * Version:                 0.0.2
  * Author:                  Gabriel Kanev
  * Author URI:              https://gkanev.com
  * License:                 MIT
@@ -42,14 +42,27 @@ function wrms_enqueue_scripts($hook)
     }
     wp_enqueue_script('wrms-script', plugin_dir_url(__FILE__) . 'js/wrms-script.js', array('jquery'), null, true);
     wp_enqueue_style('wrms-style', plugin_dir_url(__FILE__) . 'css/wrms-style.css');
+    wp_localize_script('wrms-script', 'wrms_data', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('wrms_nonce')
+    ));
 }
 
 // Admin Page Content
 function wrms_admin_page()
 {
+    $auto_sync = get_option('wrms_auto_sync', '0');
 ?>
     <div class="wrap">
         <h1>WooCommerce RankMath Sync</h1>
+        <form method="post" action="options.php">
+            <?php settings_fields('wrms_options_group'); ?>
+            <label for="wrms_auto_sync">
+                <input type="checkbox" id="wrms_auto_sync" name="wrms_auto_sync" value="1" <?php checked($auto_sync, '1'); ?> />
+                Automatically sync product information to RankMath
+            </label>
+            <?php submit_button('Save Settings'); ?>
+        </form>
         <button id="sync-products" class="button button-primary" style="margin-right: 10px; margin-bottom: 20px;">Sync Products</button>
         <button id="remove-rankmath-meta" class="button button-secondary" style="margin-bottom: 20px;">Remove RankMath Meta</button>
         <div id="sync-status" style="margin-top: 20px;">
@@ -62,4 +75,47 @@ function wrms_admin_page()
         </div>
     </div>
 <?php
+}
+
+// Register settings
+add_action('admin_init', 'wrms_register_settings');
+function wrms_register_settings()
+{
+    register_setting('wrms_options_group', 'wrms_auto_sync');
+}
+
+// Hook to save product
+add_action('save_post_product', 'wrms_maybe_sync_product', 10, 3);
+function wrms_maybe_sync_product($post_id, $post, $update)
+{
+    if (get_option('wrms_auto_sync', '0') !== '1') {
+        return;
+    }
+
+    // Your existing sync logic here
+    // Make sure to check if RankMath is active and only update if fields are empty
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        $product = wc_get_product($post_id);
+        if (!$product) return;
+
+        $title = $product->get_name();
+        $description = $product->get_description();
+        $short_description = $product->get_short_description();
+        $seo_description = $short_description ? $short_description : wp_trim_words($description, 30, '...');
+
+        if (!get_post_meta($post_id, 'rank_math_title', true)) {
+            update_post_meta($post_id, 'rank_math_title', $title);
+        }
+        if (!get_post_meta($post_id, 'rank_math_description', true)) {
+            update_post_meta($post_id, 'rank_math_description', $seo_description);
+        }
+        if (!get_post_meta($post_id, 'rank_math_focus_keyword', true)) {
+            update_post_meta($post_id, 'rank_math_focus_keyword', $title);
+        }
+    }
+}
+
+// Ensure the function to check plugin is active is loaded
+if (!function_exists('is_plugin_active')) {
+    require_once(ABSPATH . 'wp-admin/includes/plugin.php');
 }
