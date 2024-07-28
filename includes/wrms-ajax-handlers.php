@@ -174,13 +174,23 @@ function wrms_set_rankmath_meta_on_product_save($post_id, $post, $update)
     $short_description = $product->get_short_description();
     $seo_description = $short_description ? $short_description : wp_trim_words($description, 30, '...');
 
-    // Update RankMath meta
-    update_post_meta($post_id, 'rank_math_title', $title);
-    update_post_meta($post_id, 'rank_math_description', $seo_description);
-    update_post_meta($post_id, 'rank_math_focus_keyword', $title);
+    // Check if Rank Math meta already exists, if not, add it
+    if (!get_post_meta($post_id, 'rank_math_title', true)) {
+        update_post_meta($post_id, 'rank_math_title', $title);
+    }
 
-    // Mark as synced
-    update_post_meta($post_id, '_wrms_synced', 1);
+    if (!get_post_meta($post_id, 'rank_math_description', true)) {
+        update_post_meta($post_id, 'rank_math_description', $seo_description);
+    }
+
+    if (!get_post_meta($post_id, 'rank_math_focus_keyword', true)) {
+        update_post_meta($post_id, 'rank_math_focus_keyword', $title);
+    }
+
+    // Mark as synced only if we added at least one meta
+    if (!get_post_meta($post_id, '_wrms_synced', true)) {
+        update_post_meta($post_id, '_wrms_synced', 1);
+    }
 }
 
 // Remove the previous action hook if it exists
