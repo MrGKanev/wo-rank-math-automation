@@ -52,9 +52,36 @@ function wrms_enqueue_scripts($hook)
 function wrms_admin_page()
 {
     $auto_sync = get_option('wrms_auto_sync', '0');
+
+    // Fetch statistics
+    $total_products = wp_count_posts('product')->publish;
+    $synced_products = get_posts(array(
+        'post_type' => 'product',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'meta_query' => array(
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'EXISTS'
+            )
+        )
+    ));
+    $synced_count = count($synced_products);
+    $unsynced_count = $total_products - $synced_count;
+    $sync_percentage = $total_products > 0 ? round(($synced_count / $total_products) * 100, 2) : 0;
+
 ?>
     <div class="wrap">
         <h1>WooCommerce RankMath Sync</h1>
+
+        <div class="wrms-stats-box">
+            <h2>Plugin Statistics</h2>
+            <p>Total Products: <?php echo $total_products; ?></p>
+            <p>Synced Products: <?php echo $synced_count; ?></p>
+            <p>Unsynced Products: <?php echo $unsynced_count; ?></p>
+            <p>Sync Percentage: <?php echo $sync_percentage; ?>%</p>
+        </div>
+
         <form method="post" action="options.php">
             <?php settings_fields('wrms_options_group'); ?>
             <label for="wrms_auto_sync">
