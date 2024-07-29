@@ -35,18 +35,6 @@ function wrms_add_admin_menu()
 
 // Enqueue scripts and styles
 add_action('admin_enqueue_scripts', 'wrms_enqueue_scripts');
-function wrms_enqueue_scripts($hook)
-{
-    if ($hook != 'tools_page_woocommerce-rankmath-sync') {
-        return;
-    }
-    wp_enqueue_script('wrms-script', plugin_dir_url(__FILE__) . 'js/wrms-script.js', array('jquery'), null, true);
-    wp_enqueue_style('wrms-style', plugin_dir_url(__FILE__) . 'css/wrms-style.css');
-    wp_localize_script('wrms-script', 'wrms_data', array(
-        'ajax_url' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('wrms_nonce')
-    ));
-}
 
 // Admin Page Content
 // Add this function to calculate and cache the statistics
@@ -101,32 +89,37 @@ function wrms_admin_page()
     <div class="wrap">
         <h1>WooCommerce RankMath Sync</h1>
 
-        <div class="wrms-stats-box">
-            <h2>Plugin Statistics</h2>
-            <p>Total Products: <?php echo $stats['total_products']; ?></p>
-            <p>Synced Products: <?php echo $stats['synced_count']; ?></p>
-            <p>Unsynced Products: <?php echo $stats['unsynced_count']; ?></p>
-            <p>Sync Percentage: <?php echo $stats['sync_percentage']; ?>%</p>
-            <p>Last Updated: <?php echo $stats['last_updated']; ?></p>
-            <button id="update-stats" class="button button-secondary">Update Statistics</button>
-        </div>
-
-        <form method="post" action="options.php">
-            <?php settings_fields('wrms_options_group'); ?>
-            <label for="wrms_auto_sync">
-                <input type="checkbox" id="wrms_auto_sync" name="wrms_auto_sync" value="1" <?php checked($auto_sync, '1'); ?> />
-                Automatically sync product information to RankMath
-            </label>
-            <?php submit_button('Save Settings'); ?>
-        </form>
-        <button id="sync-products" class="button button-primary" style="margin-right: 10px; margin-bottom: 20px;">Sync Products</button>
-        <button id="remove-rankmath-meta" class="button button-secondary" style="margin-bottom: 20px;">Remove RankMath Meta</button>
-        <div id="sync-status" style="margin-top: 20px;">
-            <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none; margin-right: 10px;" />
-            <p id="sync-count"></p>
-            <div id="sync-log" class="sync-log"></div>
-            <div id="progress-bar" style="margin-top: 20px; height: 20px; width: 100%; background-color: #ccc;">
-                <div id="progress-bar-fill" style="height: 100%; width: 0%; background-color: #4caf50;"></div>
+        <div class="wrms-container">
+            <div class="wrms-main-content">
+                <form method="post" action="options.php">
+                    <?php settings_fields('wrms_options_group'); ?>
+                    <label for="wrms_auto_sync">
+                        <input type="checkbox" id="wrms_auto_sync" name="wrms_auto_sync" value="1" <?php checked($auto_sync, '1'); ?> />
+                        Automatically sync product information to RankMath
+                    </label>
+                    <?php submit_button('Save Settings'); ?>
+                </form>
+                <button id="sync-products" class="button button-primary" style="margin-right: 10px; margin-bottom: 20px;">Sync Products</button>
+                <button id="remove-rankmath-meta" class="button button-secondary" style="margin-bottom: 20px;">Remove RankMath Meta</button>
+                <div id="sync-status" style="margin-top: 20px;">
+                    <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none; margin-right: 10px;" />
+                    <p id="sync-count"></p>
+                    <div id="sync-log" class="sync-log"></div>
+                    <div id="progress-bar">
+                        <div id="progress-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="wrms-sidebar">
+                <div class="wrms-stats-box">
+                    <h2>Plugin Statistics</h2>
+                    <p>Total Products: <?php echo $stats['total_products']; ?></p>
+                    <p>Synced Products: <?php echo $stats['synced_count']; ?></p>
+                    <p>Unsynced Products: <?php echo $stats['unsynced_count']; ?></p>
+                    <p>Sync Percentage: <?php echo $stats['sync_percentage']; ?>%</p>
+                    <p>Last Updated: <?php echo $stats['last_updated']; ?></p>
+                    <button id="update-stats" class="button button-secondary">Update Statistics</button>
+                </div>
             </div>
         </div>
     </div>
