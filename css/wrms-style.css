@@ -1,3 +1,17 @@
+.wrms-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.wrms-main-content {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.wrms-sidebar {
+    width: 300px;
+}
+
 .sync-log {
     background-color: white;
     margin-top: 20px;

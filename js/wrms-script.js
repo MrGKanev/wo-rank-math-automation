@@ -1,4 +1,5 @@
 jQuery(document).ready(function($) {
+    
     $('#sync-products').on('click', function() {
         syncProducts();
     });
@@ -176,4 +177,36 @@ jQuery(document).ready(function($) {
             });
         }
     }
+        $('#update-stats').on('click', function(e) {
+        e.preventDefault();
+        var button = $(this);
+        button.prop('disabled', true).text('Updating...');
+
+        $.ajax({
+            url: wrms_data.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'wrms_update_stats',
+                nonce: wrms_data.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    var stats = response.data;
+                    $('.wrms-stats-box p:eq(0)').text('Total Products: ' + stats.total_products);
+                    $('.wrms-stats-box p:eq(1)').text('Synced Products: ' + stats.synced_count);
+                    $('.wrms-stats-box p:eq(2)').text('Unsynced Products: ' + stats.unsynced_count);
+                    $('.wrms-stats-box p:eq(3)').text('Sync Percentage: ' + stats.sync_percentage + '%');
+                    $('.wrms-stats-box p:eq(4)').text('Last Updated: ' + stats.last_updated);
+                } else {
+                    alert('Failed to update statistics. Please try again.');
+                }
+            },
+            error: function() {
+                alert('An error occurred. Please try again.');
+            },
+            complete: function() {
+                button.prop('disabled', false).text('Update Statistics');
+            }
+        });
+        });
 });
