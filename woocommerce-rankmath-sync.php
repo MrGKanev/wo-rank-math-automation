@@ -109,6 +109,17 @@ function wrms_admin_page()
                         <div id="progress-bar-fill"></div>
                     </div>
                 </div>
+                <!-- Updated URL Download Section -->
+                <h2>Download WordPress URLs</h2>
+                <p>Select the types of URLs you want to download and click the button below. URLs will be downloaded in chunks of 2000.</p>
+                <form id="url-download-form">
+                    <label><input type="checkbox" name="url_types[]" value="product" checked> Products</label><br>
+                    <label><input type="checkbox" name="url_types[]" value="page"> Pages</label><br>
+                    <label><input type="checkbox" name="url_types[]" value="category"> Categories</label><br>
+                    <label><input type="checkbox" name="url_types[]" value="tag"> Tags</label><br>
+                    <button id="download-urls" class="button button-primary" style="margin-top: 10px;">Download URLs</button>
+                </form>
+                <div id="download-status" style="margin-top: 10px;"></div>
             </div>
             <div class="wrms-sidebar">
                 <div class="wrms-stats-box">

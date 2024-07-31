@@ -146,6 +146,92 @@ function wrms_update_auto_sync()
     wp_send_json_success(array('message' => 'Auto-sync setting updated successfully.'));
 }
 
+add_action('wp_ajax_wrms_get_urls', 'wrms_ajax_get_urls');
+function wrms_ajax_get_urls()
+{
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    $offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+    $chunk_size = isset($_POST['chunk_size']) ? intval($_POST['chunk_size']) : 2000;
+    $url_types = isset($_POST['url_types']) ? $_POST['url_types'] : array();
+
+    $urls = array();
+
+    foreach ($url_types as $type) {
+        switch ($type) {
+            case 'product':
+                $urls = array_merge($urls, wrms_get_product_urls($offset, $chunk_size));
+                break;
+            case 'page':
+                $urls = array_merge($urls, wrms_get_page_urls($offset, $chunk_size));
+                break;
+            case 'category':
+                $urls = array_merge($urls, wrms_get_category_urls($offset, $chunk_size));
+                break;
+            case 'tag':
+                $urls = array_merge($urls, wrms_get_tag_urls($offset, $chunk_size));
+                break;
+        }
+    }
+
+    wp_send_json_success(array('urls' => $urls));
+}
+
+function wrms_get_product_urls($offset, $chunk_size)
+{
+    $args = array(
+        'post_type' => 'product',
+        'posts_per_page' => $chunk_size,
+        'offset' => $offset,
+        'fields' => 'ids'
+    );
+
+    $product_ids = get_posts($args);
+    return array_map('get_permalink', $product_ids);
+}
+
+function wrms_get_page_urls($offset, $chunk_size)
+{
+    $args = array(
+        'post_type' => 'page',
+        'posts_per_page' => $chunk_size,
+        'offset' => $offset,
+        'fields' => 'ids'
+    );
+
+    $page_ids = get_posts($args);
+    return array_map('get_permalink', $page_ids);
+}
+
+function wrms_get_category_urls($offset, $chunk_size)
+{
+    $categories = get_terms(array(
+        'taxonomy' => 'category',
+        'hide_empty' => false,
+        'offset' => $offset,
+        'number' => $chunk_size,
+    ));
+
+    return array_map('get_category_link', wp_list_pluck($categories, 'term_id'));
+}
+
+function wrms_get_tag_urls($offset, $chunk_size)
+{
+    $tags = get_terms(array(
+        'taxonomy' => 'post_tag',
+        'hide_empty' => false,
+        'offset' => $offset,
+        'number' => $chunk_size,
+    ));
+
+    return array_map('get_tag_link', wp_list_pluck($tags, 'term_id'));
+}
+
 function wrms_set_rankmath_meta_on_product_save($post_id, $post, $update)
 {
     // Avoid autosaves

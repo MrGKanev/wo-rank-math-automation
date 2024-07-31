@@ -209,4 +209,57 @@ jQuery(document).ready(function($) {
             }
         });
         });
+        // Updated URL Download functionality
+    $('#download-urls').on('click', function(e) {
+        e.preventDefault();
+        var urlTypes = $('input[name="url_types[]"]:checked').map(function() {
+            return this.value;
+        }).get();
+
+        if (urlTypes.length === 0) {
+            $('#download-status').text('Please select at least one URL type to download.');
+            return;
+        }
+
+        var offset = 0;
+        var chunkSize = 2000;
+        
+        function downloadChunk() {
+            $.ajax({
+                url: wrms_data.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'wrms_get_urls',
+                    nonce: wrms_data.nonce,
+                    offset: offset,
+                    chunk_size: chunkSize,
+                    url_types: urlTypes
+                },
+                success: function(response) {
+                    if (response.success && response.data.urls.length > 0) {
+                        // Create and download the file
+                        var blob = new Blob([response.data.urls.join('\n')], {type: 'text/plain'});
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = 'wordpress_urls_' + offset + '-' + (offset + response.data.urls.length) + '.txt';
+                        link.click();
+                        
+                        // Update status
+                        $('#download-status').text('Downloaded URLs ' + offset + ' to ' + (offset + response.data.urls.length));
+                        
+                        // Move to next chunk
+                        offset += chunkSize;
+                        downloadChunk();
+                    } else {
+                        $('#download-status').text('All URLs have been downloaded.');
+                    }
+                },
+                error: function() {
+                    $('#download-status').text('An error occurred. Please try again.');
+                }
+            });
+        }
+        
+        downloadChunk();
+    });
 });
