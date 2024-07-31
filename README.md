@@ -9,6 +9,7 @@ WooCommerce RankMath Sync is a WordPress plugin that can automatically copy WooC
 - Sync WooCommerce product information - Copies titles, descriptions, and focus keywords with RankMath meta fields.
 - Bulk optimizing
 - Remove RankMath meta information from products.
+- Bulk downloading URL's - Products, Pages, Categories, Tags
 
 ## Installation
 
