@@ -84,13 +84,46 @@ function wrms_admin_page()
 {
     $auto_sync = get_option('wrms_auto_sync', '0');
     $stats = wrms_get_stats();
-
 ?>
-    <div class="wrap">
+    <div class="wrap wrms-admin-page">
         <h1>WooCommerce RankMath Sync</h1>
 
-        <div class="wrms-container">
-            <div class="wrms-main-content">
+        <div class="wrms-tabs">
+            <button class="wrms-tab-link active" data-tab="sync">Sync</button>
+            <button class="wrms-tab-link" data-tab="url-download">URL Download</button>
+            <button class="wrms-tab-link" data-tab="settings">Settings</button>
+        </div>
+
+        <div class="wrms-tab-content">
+            <div id="sync" class="wrms-tab-pane active">
+                <h2>Sync Products</h2>
+                <button id="sync-products" class="button button-primary">Sync Products</button>
+                <button id="remove-rankmath-meta" class="button button-secondary">Remove RankMath Meta</button>
+                <div id="sync-status" class="wrms-status-box">
+                    <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none;" />
+                    <p id="sync-count"></p>
+                    <div id="sync-log" class="sync-log"></div>
+                    <div id="progress-bar">
+                        <div id="progress-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="url-download" class="wrms-tab-pane">
+                <h2>Download WordPress URLs</h2>
+                <p>Select the types of URLs you want to download. URLs will be downloaded in chunks of 2000.</p>
+                <form id="url-download-form">
+                    <label><input type="checkbox" name="url_types[]" value="product" checked> Products</label>
+                    <label><input type="checkbox" name="url_types[]" value="page"> Pages</label>
+                    <label><input type="checkbox" name="url_types[]" value="category"> Categories</label>
+                    <label><input type="checkbox" name="url_types[]" value="tag"> Tags</label>
+                    <button id="download-urls" class="button button-primary">Download URLs</button>
+                </form>
+                <div id="download-status" class="wrms-status-box"></div>
+            </div>
+
+            <div id="settings" class="wrms-tab-pane">
+                <h2>Plugin Settings</h2>
                 <form method="post" action="options.php">
                     <?php settings_fields('wrms_options_group'); ?>
                     <label for="wrms_auto_sync">
@@ -99,38 +132,18 @@ function wrms_admin_page()
                     </label>
                     <?php submit_button('Save Settings'); ?>
                 </form>
-                <button id="sync-products" class="button button-primary" style="margin-right: 10px; margin-bottom: 20px;">Sync Products</button>
-                <button id="remove-rankmath-meta" class="button button-secondary" style="margin-bottom: 20px;">Remove RankMath Meta</button>
-                <div id="sync-status" style="margin-top: 20px;">
-                    <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none; margin-right: 10px;" />
-                    <p id="sync-count"></p>
-                    <div id="sync-log" class="sync-log"></div>
-                    <div id="progress-bar">
-                        <div id="progress-bar-fill"></div>
-                    </div>
-                </div>
-                <!-- Updated URL Download Section -->
-                <h2>Download WordPress URLs</h2>
-                <p>Select the types of URLs you want to download and click the button below. URLs will be downloaded in chunks of 2000.</p>
-                <form id="url-download-form">
-                    <label><input type="checkbox" name="url_types[]" value="product" checked> Products</label><br>
-                    <label><input type="checkbox" name="url_types[]" value="page"> Pages</label><br>
-                    <label><input type="checkbox" name="url_types[]" value="category"> Categories</label><br>
-                    <label><input type="checkbox" name="url_types[]" value="tag"> Tags</label><br>
-                    <button id="download-urls" class="button button-primary" style="margin-top: 10px;">Download URLs</button>
-                </form>
-                <div id="download-status" style="margin-top: 10px;"></div>
             </div>
-            <div class="wrms-sidebar">
-                <div class="wrms-stats-box">
-                    <h2>Plugin Statistics</h2>
-                    <p>Total Products: <?php echo $stats['total_products']; ?></p>
-                    <p>Synced Products: <?php echo $stats['synced_count']; ?></p>
-                    <p>Unsynced Products: <?php echo $stats['unsynced_count']; ?></p>
-                    <p>Sync Percentage: <?php echo $stats['sync_percentage']; ?>%</p>
-                    <p>Last Updated: <?php echo $stats['last_updated']; ?></p>
-                    <button id="update-stats" class="button button-secondary">Update Statistics</button>
-                </div>
+        </div>
+
+        <div class="wrms-sidebar">
+            <div class="wrms-stats-box">
+                <h2>Plugin Statistics</h2>
+                <p>Total Products: <span id="total-products"><?php echo $stats['total_products']; ?></span></p>
+                <p>Synced Products: <span id="synced-products"><?php echo $stats['synced_count']; ?></span></p>
+                <p>Unsynced Products: <span id="unsynced-products"><?php echo $stats['unsynced_count']; ?></span></p>
+                <p>Sync Percentage: <span id="sync-percentage"><?php echo $stats['sync_percentage']; ?>%</span></p>
+                <p>Last Updated: <span id="last-updated"><?php echo $stats['last_updated']; ?></span></p>
+                <button id="update-stats" class="button button-secondary">Update Statistics</button>
             </div>
         </div>
     </div>

@@ -12,6 +12,16 @@ jQuery(document).ready(function($) {
         updateAutoSync($(this).is(':checked'));
     });
 
+    $('.wrms-tab-link').click(function() {
+        var tabId = $(this).data('tab');
+        
+        $('.wrms-tab-link').removeClass('active');
+        $('.wrms-tab-pane').removeClass('active');
+        
+        $(this).addClass('active');
+        $('#' + tabId).addClass('active');
+    });
+
     function updateAutoSync(isChecked) {
         $.ajax({
             url: ajaxurl,
