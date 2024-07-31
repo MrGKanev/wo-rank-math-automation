@@ -1,17 +1,5 @@
 jQuery(document).ready(function($) {
-    
-    $('#sync-products').on('click', function() {
-        syncProducts();
-    });
-
-    $('#remove-rankmath-meta').on('click', function() {
-        removeMeta();
-    });
-
-    $('#wrms_auto_sync').on('change', function() {
-        updateAutoSync($(this).is(':checked'));
-    });
-
+    // Tab functionality
     $('.wrms-tab-link').click(function() {
         var tabId = $(this).data('tab');
         
@@ -20,6 +8,114 @@ jQuery(document).ready(function($) {
         
         $(this).addClass('active');
         $('#' + tabId).addClass('active');
+    });
+
+    // Sync Products
+    $('#sync-products').click(function() {
+        $('#progress-bar').show();
+        $('#sync-loader').show();
+        syncProducts();
+    });
+
+    // Remove RankMath Meta
+    $('#remove-rankmath-meta').click(function() {
+        removeMeta();
+    });
+
+    // Auto-sync toggle
+    $('#wrms_auto_sync').on('change', function() {
+        updateAutoSync($(this).is(':checked'));
+    });
+
+    // Update Statistics
+    $('#update-stats').on('click', function(e) {
+        e.preventDefault();
+        var button = $(this);
+        button.prop('disabled', true).text('Updating...');
+
+        $.ajax({
+            url: wrms_data.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'wrms_update_stats',
+                nonce: wrms_data.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    var stats = response.data;
+                    $('.wrms-stats-box p:eq(0)').text('Total Products: ' + stats.total_products);
+                    $('.wrms-stats-box p:eq(1)').text('Synced Products: ' + stats.synced_count);
+                    $('.wrms-stats-box p:eq(2)').text('Unsynced Products: ' + stats.unsynced_count);
+                    $('.wrms-stats-box p:eq(3)').text('Sync Percentage: ' + stats.sync_percentage + '%');
+                    $('.wrms-stats-box p:eq(4)').text('Last Updated: ' + stats.last_updated);
+                } else {
+                    alert('Failed to update statistics. Please try again.');
+                }
+            },
+            error: function() {
+                alert('An error occurred. Please try again.');
+            },
+            complete: function() {
+                button.prop('disabled', false).text('Update Statistics');
+            }
+        });
+    });
+
+    // Download URLs
+    $('#download-urls').click(function(e) {
+        e.preventDefault();
+        $('#progress-bar').show();
+        var urlTypes = $('input[name="url_types[]"]:checked').map(function() {
+            return this.value;
+        }).get();
+
+        if (urlTypes.length === 0) {
+            $('#download-status').text('Please select at least one URL type to download.');
+            return;
+        }
+
+        var offset = 0;
+        var chunkSize = 2000;
+        
+        function downloadChunk() {
+            $.ajax({
+                url: wrms_data.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'wrms_get_urls',
+                    nonce: wrms_data.nonce,
+                    offset: offset,
+                    chunk_size: chunkSize,
+                    url_types: urlTypes
+                },
+                success: function(response) {
+                    if (response.success && response.data.urls.length > 0) {
+                        // Create and download the file
+                        var blob = new Blob([response.data.urls.join('\n')], {type: 'text/plain'});
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = 'wordpress_urls_' + offset + '-' + (offset + response.data.urls.length) + '.txt';
+                        link.click();
+                        
+                        // Update status
+                        $('#download-status').text('Downloaded URLs ' + offset + ' to ' + (offset + response.data.urls.length));
+                        
+                        // Move to next chunk
+                        offset += chunkSize;
+                        downloadChunk();
+                    } else {
+                        $('#download-status').text('All URLs have been downloaded.');
+                        $('#progress-bar').hide();
+                    }
+                },
+                error: function() {
+                    $('#download-status').text('An error occurred. Please try again.');
+                    $('#progress-bar').hide();
+                }
+            });
+        }
+        
+        downloadChunk();
     });
 
     function updateAutoSync(isChecked) {
@@ -187,89 +283,4 @@ jQuery(document).ready(function($) {
             });
         }
     }
-        $('#update-stats').on('click', function(e) {
-        e.preventDefault();
-        var button = $(this);
-        button.prop('disabled', true).text('Updating...');
-
-        $.ajax({
-            url: wrms_data.ajax_url,
-            type: 'POST',
-            data: {
-                action: 'wrms_update_stats',
-                nonce: wrms_data.nonce
-            },
-            success: function(response) {
-                if (response.success) {
-                    var stats = response.data;
-                    $('.wrms-stats-box p:eq(0)').text('Total Products: ' + stats.total_products);
-                    $('.wrms-stats-box p:eq(1)').text('Synced Products: ' + stats.synced_count);
-                    $('.wrms-stats-box p:eq(2)').text('Unsynced Products: ' + stats.unsynced_count);
-                    $('.wrms-stats-box p:eq(3)').text('Sync Percentage: ' + stats.sync_percentage + '%');
-                    $('.wrms-stats-box p:eq(4)').text('Last Updated: ' + stats.last_updated);
-                } else {
-                    alert('Failed to update statistics. Please try again.');
-                }
-            },
-            error: function() {
-                alert('An error occurred. Please try again.');
-            },
-            complete: function() {
-                button.prop('disabled', false).text('Update Statistics');
-            }
-        });
-        });
-        // Updated URL Download functionality
-    $('#download-urls').on('click', function(e) {
-        e.preventDefault();
-        var urlTypes = $('input[name="url_types[]"]:checked').map(function() {
-            return this.value;
-        }).get();
-
-        if (urlTypes.length === 0) {
-            $('#download-status').text('Please select at least one URL type to download.');
-            return;
-        }
-
-        var offset = 0;
-        var chunkSize = 2000;
-        
-        function downloadChunk() {
-            $.ajax({
-                url: wrms_data.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'wrms_get_urls',
-                    nonce: wrms_data.nonce,
-                    offset: offset,
-                    chunk_size: chunkSize,
-                    url_types: urlTypes
-                },
-                success: function(response) {
-                    if (response.success && response.data.urls.length > 0) {
-                        // Create and download the file
-                        var blob = new Blob([response.data.urls.join('\n')], {type: 'text/plain'});
-                        var link = document.createElement('a');
-                        link.href = window.URL.createObjectURL(blob);
-                        link.download = 'wordpress_urls_' + offset + '-' + (offset + response.data.urls.length) + '.txt';
-                        link.click();
-                        
-                        // Update status
-                        $('#download-status').text('Downloaded URLs ' + offset + ' to ' + (offset + response.data.urls.length));
-                        
-                        // Move to next chunk
-                        offset += chunkSize;
-                        downloadChunk();
-                    } else {
-                        $('#download-status').text('All URLs have been downloaded.');
-                    }
-                },
-                error: function() {
-                    $('#download-status').text('An error occurred. Please try again.');
-                }
-            });
-        }
-        
-        downloadChunk();
-    });
 });
