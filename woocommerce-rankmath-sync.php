@@ -53,10 +53,15 @@ function wrms_admin_page()
 
         <div class="wrms-tab-content">
             <div id="sync" class="wrms-tab-pane active">
-                <h2>Sync Products and Categories</h2>
-                <button id="sync-products" class="button button-primary">Sync Products</button>
-                <button id="sync-categories" class="button button-primary">Sync Categories</button>
-                <button id="remove-rankmath-meta" class="button button-secondary">Remove RankMath Meta</button>
+                <h2>Sync or Remove RankMath Meta</h2>
+                <div class="sync-buttons">
+                    <button id="sync-products" class="button button-primary">Sync Products</button>
+                    <button id="sync-categories" class="button button-primary">Sync Categories</button>
+                </div>
+                <div class="remove-buttons">
+                    <button id="remove-product-meta" class="button button-secondary">Remove Product Meta</button>
+                    <button id="remove-category-meta" class="button button-secondary">Remove Category Meta</button>
+                </div>
                 <div id="sync-status" class="wrms-status-box">
                     <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none;" />
                     <p id="sync-count"></p>

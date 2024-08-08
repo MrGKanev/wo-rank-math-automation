@@ -110,6 +110,71 @@ function wrms_remove_next_product()
     }
 }
 
+add_action('wp_ajax_wrms_remove_product_meta', 'wrms_remove_product_meta');
+add_action('wp_ajax_wrms_remove_category_meta', 'wrms_remove_category_meta');
+
+function wrms_remove_product_meta()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    $args = array(
+        'post_type' => 'product',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'meta_query' => array(
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'EXISTS'
+            )
+        )
+    );
+    $products = get_posts($args);
+
+    $removed_count = 0;
+
+    foreach ($products as $product_id) {
+        delete_post_meta($product_id, 'rank_math_title');
+        delete_post_meta($product_id, 'rank_math_description');
+        delete_post_meta($product_id, 'rank_math_focus_keyword');
+        delete_post_meta($product_id, '_wrms_synced');
+        $removed_count++;
+    }
+
+    wp_send_json_success(array('removed' => $removed_count, 'total' => count($products)));
+}
+
+function wrms_remove_category_meta()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    $categories = get_terms(array(
+        'taxonomy' => 'product_cat',
+        'hide_empty' => false,
+    ));
+
+    $removed_count = 0;
+
+    foreach ($categories as $category) {
+        delete_term_meta($category->term_id, 'rank_math_title');
+        delete_term_meta($category->term_id, 'rank_math_description');
+        delete_term_meta($category->term_id, 'rank_math_focus_keyword');
+        delete_term_meta($category->term_id, '_wrms_synced');
+        $removed_count++;
+    }
+
+    wp_send_json_success(array('removed' => $removed_count, 'total' => count($categories)));
+}
+
 function wrms_get_product_count()
 {
     if (!current_user_can('manage_options')) {
@@ -163,6 +228,7 @@ function wrms_sync_categories()
             'hide_empty' => false,
         ));
 
+        $total_categories = count($categories);
         $synced_count = 0;
 
         foreach ($categories as $category) {
@@ -170,22 +236,28 @@ function wrms_sync_categories()
             $description = $category->description;
             $seo_description = wp_trim_words($description, 30, '...');
 
+            $meta_updated = false;
+
             if (!get_term_meta($category->term_id, 'rank_math_title', true)) {
                 update_term_meta($category->term_id, 'rank_math_title', $title);
-                $synced_count++;
+                $meta_updated = true;
             }
             if (!get_term_meta($category->term_id, 'rank_math_description', true)) {
                 update_term_meta($category->term_id, 'rank_math_description', $seo_description);
-                $synced_count++;
+                $meta_updated = true;
             }
             if (!get_term_meta($category->term_id, 'rank_math_focus_keyword', true)) {
                 update_term_meta($category->term_id, 'rank_math_focus_keyword', $title);
+                $meta_updated = true;
+            }
+
+            if ($meta_updated) {
+                update_term_meta($category->term_id, '_wrms_synced', 1);
                 $synced_count++;
             }
-            update_term_meta($category->term_id, '_wrms_synced', 1);
         }
 
-        wp_send_json_success(array('synced' => $synced_count, 'total' => count($categories)));
+        wp_send_json_success(array('synced' => $synced_count, 'total' => $total_categories));
     } else {
         wp_send_json_error(array('message' => 'RankMath SEO plugin is not active.'));
     }

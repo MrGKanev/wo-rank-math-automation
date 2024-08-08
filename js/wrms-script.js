@@ -24,9 +24,18 @@ jQuery(document).ready(function($) {
         syncCategories();
     });
 
-    // Remove RankMath Meta
-    $('#remove-rankmath-meta').click(function() {
-        removeMeta();
+    // Remove Product Meta
+    $('#remove-product-meta').click(function() {
+        $('#progress-bar').show();
+        $('#sync-loader').show();
+        removeProductMeta();
+    });
+
+    // Remove Category Meta
+    $('#remove-category-meta').click(function() {
+        $('#progress-bar').show();
+        $('#sync-loader').show();
+        removeCategoryMeta();
     });
 
     // Auto-sync toggle
@@ -195,7 +204,7 @@ jQuery(document).ready(function($) {
 
                         // Update progress bar
                         var progress = (processedProducts / totalProducts) * 100;
-                        $('#progress-bar-fill').width(progress + '%');
+                        $('#progress-bar-fill').css('width', progress + '%');
 
                         if (processedProducts < totalProducts) {
                             processNextProduct();
@@ -222,7 +231,7 @@ jQuery(document).ready(function($) {
     function syncCategories() {
         $('#sync-loader').show();
         $('#sync-log').html(''); // Clear log area
-        $('#progress-bar-fill').width('0%'); // Reset progress bar
+        $('#progress-bar-fill').css('width', '0%'); // Reset progress bar
 
         $.ajax({
             url: wrms_data.ajax_url,
@@ -233,13 +242,13 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    $('#sync-count').text('Processed ' + response.data.synced + ' of ' + response.data.total + ' categories');
+                    $('#sync-count').text('Synced ' + response.data.synced + ' of ' + response.data.total + ' categories');
                     $('#sync-log').append('<p>Categories synced successfully!</p>');
                     $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight);
 
                     // Update progress bar
                     var progress = (response.data.synced / response.data.total) * 100;
-                    $('#progress-bar-fill').width(progress + '%');
+                    $('#progress-bar-fill').css('width', progress + '%');
                 } else {
                     $('#sync-status').append('<p>Error syncing categories: ' + response.data.message + '</p>');
                 }
@@ -248,6 +257,73 @@ jQuery(document).ready(function($) {
             error: function(xhr, status, error) {
                 $('#sync-loader').hide();
                 $('#sync-status').append('<p>An error occurred during category syncing: ' + error + '</p>');
+            }
+        });
+    }
+
+    function removeProductMeta() {
+        $('#sync-loader').show();
+        $('#sync-log').html(''); // Clear log area
+        $('#progress-bar-fill').css('width', '0%'); // Reset progress bar
+
+        $.ajax({
+            url: wrms_data.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'wrms_remove_product_meta',
+                nonce: wrms_data.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#sync-count').text('Removed meta from ' + response.data.removed + ' of ' + response.data.total + ' products');
+                    $('#sync-log').append('<p>Product meta removed successfully!</p>');
+                    $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight);
+
+                    // Update progress bar
+                    var progress = (response.data.removed / response.data.total) * 100;
+                    $('#progress-bar-fill').css('width', progress + '%');
+                } else {
+                    $('#sync-status').append('<p>Error removing product meta: ' + response.data.message + '</p>');
+                }
+                $('#sync-loader').hide();
+            },
+            error: function(xhr, status, error) {
+                $('#sync-loader').hide();
+                $('#sync-status').append('<p>An error occurred during product meta removal: ' + error + '</p>');
+            }
+        });
+    }
+
+
+    function removeCategoryMeta() {
+        $('#sync-loader').show();
+        $('#sync-log').html(''); // Clear log area
+        $('#progress-bar-fill').css('width', '0%'); // Reset progress bar
+
+        $.ajax({
+            url: wrms_data.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'wrms_remove_category_meta',
+                nonce: wrms_data.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#sync-count').text('Removed meta from ' + response.data.removed + ' of ' + response.data.total + ' categories');
+                    $('#sync-log').append('<p>Category meta removed successfully!</p>');
+                    $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight);
+
+                    // Update progress bar
+                    var progress = (response.data.removed / response.data.total) * 100;
+                    $('#progress-bar-fill').css('width', progress + '%');
+                } else {
+                    $('#sync-status').append('<p>Error removing category meta: ' + response.data.message + '</p>');
+                }
+                $('#sync-loader').hide();
+            },
+            error: function(xhr, status, error) {
+                $('#sync-loader').hide();
+                $('#sync-status').append('<p>An error occurred during category meta removal: ' + error + '</p>');
             }
         });
     }
