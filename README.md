@@ -15,9 +15,9 @@ In summary, the plugin checks:
 
 ## Features
 
-- Sync WooCommerce product information - Copies titles, descriptions, and focus keywords with RankMath meta fields.
+- Sync's: WordPress pages, WordPress Media, WooCommerce product, categories, and tag information - Copies titles, descriptions, and focus keywords with RankMath meta fields.
 - Bulk optimizing
-- Remove RankMath meta information from products.
+- Remove RankMath meta information from everything mentuned above.
 - Bulk downloading URL's - Products, Pages, Categories, Tags
 
 ## Installation
