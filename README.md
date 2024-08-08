@@ -4,6 +4,15 @@
 
 WooCommerce RankMath Sync is a WordPress plugin that can automatically copy WooCommerce product information to RankMath's meta information. This ensures that your product data is properly optimized for SEO using the RankMath plugin.
 
+### How it works
+
+In summary, the plugin checks:
+
+- If auto-sync is enabled (for automatic syncing on save/edit)
+- If RankMath is active
+- If the specific RankMath meta fields are empty
+- If all these conditions are met, it copies the WooCommerce data to RankMath fields
+
 ## Features
 
 - Sync WooCommerce product information - Copies titles, descriptions, and focus keywords with RankMath meta fields.
