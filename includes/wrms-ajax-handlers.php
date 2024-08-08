@@ -8,6 +8,8 @@ add_action('wp_ajax_wrms_sync_next_product', 'wrms_sync_next_product');
 add_action('wp_ajax_wrms_remove_next_product', 'wrms_remove_next_product');
 add_action('wp_ajax_wrms_get_product_count', 'wrms_get_product_count');
 add_action('wp_ajax_wrms_update_auto_sync', 'wrms_update_auto_sync');
+add_action('wp_ajax_wrms_sync_categories', 'wrms_sync_categories');
+add_action('wp_ajax_wrms_get_urls', 'wrms_ajax_get_urls');
 
 function wrms_sync_next_product()
 {
@@ -146,7 +148,49 @@ function wrms_update_auto_sync()
     wp_send_json_success(array('message' => 'Auto-sync setting updated successfully.'));
 }
 
-add_action('wp_ajax_wrms_get_urls', 'wrms_ajax_get_urls');
+function wrms_sync_categories()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        $categories = get_terms(array(
+            'taxonomy' => 'product_cat',
+            'hide_empty' => false,
+        ));
+
+        $synced_count = 0;
+
+        foreach ($categories as $category) {
+            $title = $category->name;
+            $description = $category->description;
+            $seo_description = wp_trim_words($description, 30, '...');
+
+            if (!get_term_meta($category->term_id, 'rank_math_title', true)) {
+                update_term_meta($category->term_id, 'rank_math_title', $title);
+                $synced_count++;
+            }
+            if (!get_term_meta($category->term_id, 'rank_math_description', true)) {
+                update_term_meta($category->term_id, 'rank_math_description', $seo_description);
+                $synced_count++;
+            }
+            if (!get_term_meta($category->term_id, 'rank_math_focus_keyword', true)) {
+                update_term_meta($category->term_id, 'rank_math_focus_keyword', $title);
+                $synced_count++;
+            }
+            update_term_meta($category->term_id, '_wrms_synced', 1);
+        }
+
+        wp_send_json_success(array('synced' => $synced_count, 'total' => count($categories)));
+    } else {
+        wp_send_json_error(array('message' => 'RankMath SEO plugin is not active.'));
+    }
+}
+
 function wrms_ajax_get_urls()
 {
     check_ajax_referer('wrms_nonce', 'nonce');
@@ -231,59 +275,6 @@ function wrms_get_tag_urls($offset, $chunk_size)
 
     return array_map('get_tag_link', wp_list_pluck($tags, 'term_id'));
 }
-
-function wrms_set_rankmath_meta_on_product_save($post_id, $post, $update)
-{
-    // Avoid autosaves
-    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
-
-    // Check if this is a product post type
-    if ($post->post_type !== 'product') return;
-
-    // Check if auto-sync is enabled
-    if (get_option('wrms_auto_sync', '0') !== '1') return;
-
-    // Ensure RankMath is active
-    if (!is_plugin_active('seo-by-rank-math/rank-math.php')) return;
-
-    // Get the product object
-    $product = wc_get_product($post_id);
-    if (!$product) return;
-
-    // Get product details
-    $title = $product->get_name();
-
-    // If the title is still 'auto-draft', skip this save
-    if ($title === 'auto-draft') return;
-
-    $description = $product->get_description();
-    $short_description = $product->get_short_description();
-    $seo_description = $short_description ? $short_description : wp_trim_words($description, 30, '...');
-
-    // Check if Rank Math meta already exists, if not, add it
-    if (!get_post_meta($post_id, 'rank_math_title', true)) {
-        update_post_meta($post_id, 'rank_math_title', $title);
-    }
-
-    if (!get_post_meta($post_id, 'rank_math_description', true)) {
-        update_post_meta($post_id, 'rank_math_description', $seo_description);
-    }
-
-    if (!get_post_meta($post_id, 'rank_math_focus_keyword', true)) {
-        update_post_meta($post_id, 'rank_math_focus_keyword', $title);
-    }
-
-    // Mark as synced only if we added at least one meta
-    if (!get_post_meta($post_id, '_wrms_synced', true)) {
-        update_post_meta($post_id, '_wrms_synced', 1);
-    }
-}
-
-// Remove the previous action hook if it exists
-remove_action('save_post_product', 'wrms_set_rankmath_meta_on_product_save', 20);
-
-// Add the new action hook with a later priority
-add_action('save_post_product', 'wrms_set_rankmath_meta_on_product_save', 30, 3);
 
 // Ensure the function to check plugin is active is loaded
 if (!function_exists('is_plugin_active')) {

@@ -2,8 +2,8 @@
 /*
  * Plugin Name:             WooCommerce RankMath Sync
  * Plugin URI:              https://github.com/MrGKanev/wo-rank-math-automation/
- * Description:             Copies WooCommerce product information to RankMath's meta information.
- * Version:                 0.0.2
+ * Description:             Copies WooCommerce product and category information to RankMath's meta information.
+ * Version:                 0.0.3
  * Author:                  Gabriel Kanev
  * Author URI:              https://gkanev.com
  * License:                 MIT
@@ -37,7 +37,78 @@ function wrms_add_admin_menu()
 add_action('admin_enqueue_scripts', 'wrms_enqueue_scripts');
 
 // Admin Page Content
-// Add this function to calculate and cache the statistics
+function wrms_admin_page()
+{
+    $auto_sync = get_option('wrms_auto_sync', '0');
+    $stats = wrms_get_stats();
+?>
+    <div class="wrap wrms-admin-page">
+        <h1>WooCommerce RankMath Sync</h1>
+
+        <div class="wrms-tabs">
+            <button class="wrms-tab-link active" data-tab="sync">Sync</button>
+            <button class="wrms-tab-link" data-tab="url-download">URL Download</button>
+            <button class="wrms-tab-link" data-tab="settings">Settings</button>
+        </div>
+
+        <div class="wrms-tab-content">
+            <div id="sync" class="wrms-tab-pane active">
+                <h2>Sync Products and Categories</h2>
+                <button id="sync-products" class="button button-primary">Sync Products</button>
+                <button id="sync-categories" class="button button-primary">Sync Categories</button>
+                <button id="remove-rankmath-meta" class="button button-secondary">Remove RankMath Meta</button>
+                <div id="sync-status" class="wrms-status-box">
+                    <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none;" />
+                    <p id="sync-count"></p>
+                    <div id="sync-log" class="sync-log"></div>
+                    <div id="progress-bar">
+                        <div id="progress-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="url-download" class="wrms-tab-pane">
+                <h2>Download WordPress URLs</h2>
+                <p>Select the types of URLs you want to download. URLs will be downloaded in chunks of 2000.</p>
+                <form id="url-download-form">
+                    <label><input type="checkbox" name="url_types[]" value="product" checked> Products</label>
+                    <label><input type="checkbox" name="url_types[]" value="page"> Pages</label>
+                    <label><input type="checkbox" name="url_types[]" value="category"> Categories</label>
+                    <label><input type="checkbox" name="url_types[]" value="tag"> Tags</label>
+                    <button id="download-urls" class="button button-primary">Download URLs</button>
+                </form>
+                <div id="download-status" class="wrms-status-box"></div>
+            </div>
+
+            <div id="settings" class="wrms-tab-pane">
+                <h2>Plugin Settings</h2>
+                <form method="post" action="options.php">
+                    <?php settings_fields('wrms_options_group'); ?>
+                    <label for="wrms_auto_sync">
+                        <input type="checkbox" id="wrms_auto_sync" name="wrms_auto_sync" value="1" <?php checked($auto_sync, '1'); ?> />
+                        Automatically sync product and category information to RankMath
+                    </label>
+                    <?php submit_button('Save Settings'); ?>
+                </form>
+            </div>
+        </div>
+
+        <div class="wrms-sidebar">
+            <div class="wrms-stats-box">
+                <h2>Plugin Statistics</h2>
+                <p>Total Products: <span id="total-products"><?php echo $stats['total_products']; ?></span></p>
+                <p>Synced Products: <span id="synced-products"><?php echo $stats['synced_count']; ?></span></p>
+                <p>Unsynced Products: <span id="unsynced-products"><?php echo $stats['unsynced_count']; ?></span></p>
+                <p>Sync Percentage: <span id="sync-percentage"><?php echo $stats['sync_percentage']; ?>%</span></p>
+                <p>Last Updated: <span id="last-updated"><?php echo $stats['last_updated']; ?></span></p>
+                <button id="update-stats" class="button button-secondary">Update Statistics</button>
+            </div>
+        </div>
+    </div>
+<?php
+}
+
+// Function to calculate and cache statistics
 function wrms_calculate_and_cache_stats()
 {
     $total_products = wp_count_posts('product')->publish;
@@ -69,7 +140,7 @@ function wrms_calculate_and_cache_stats()
     return $stats;
 }
 
-// Add this function to get the cached stats or calculate if not available
+// Function to get cached stats or calculate if not available
 function wrms_get_stats()
 {
     $stats = get_option('wrms_stats_cache');
@@ -79,93 +150,7 @@ function wrms_get_stats()
     return $stats;
 }
 
-// Modify the admin page function
-function wrms_admin_page()
-{
-    $auto_sync = get_option('wrms_auto_sync', '0');
-    $stats = wrms_get_stats();
-?>
-    <div class="wrap wrms-admin-page">
-        <h1>WooCommerce RankMath Sync</h1>
-
-        <div class="wrms-tabs">
-            <button class="wrms-tab-link active" data-tab="sync">Sync</button>
-            <button class="wrms-tab-link" data-tab="url-download">URL Download</button>
-            <button class="wrms-tab-link" data-tab="settings">Settings</button>
-        </div>
-
-        <div class="wrms-tab-content">
-            <div id="sync" class="wrms-tab-pane active">
-                <h2>Sync Products</h2>
-                <button id="sync-products" class="button button-primary">Sync Products</button>
-                <button id="remove-rankmath-meta" class="button button-secondary">Remove RankMath Meta</button>
-                <div id="sync-status" class="wrms-status-box">
-                    <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none;" />
-                    <p id="sync-count"></p>
-                    <div id="sync-log" class="sync-log"></div>
-                    <div id="progress-bar">
-                        <div id="progress-bar-fill"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="url-download" class="wrms-tab-pane">
-                <h2>Download WordPress URLs</h2>
-                <p>Select the types of URLs you want to download. URLs will be downloaded in chunks of 2000.</p>
-                <form id="url-download-form">
-                    <label><input type="checkbox" name="url_types[]" value="product" checked> Products</label>
-                    <label><input type="checkbox" name="url_types[]" value="page"> Pages</label>
-                    <label><input type="checkbox" name="url_types[]" value="category"> Categories</label>
-                    <label><input type="checkbox" name="url_types[]" value="tag"> Tags</label>
-                    <button id="download-urls" class="button button-primary">Download URLs</button>
-                </form>
-                <div id="download-status" class="wrms-status-box"></div>
-            </div>
-
-            <div id="settings" class="wrms-tab-pane">
-                <h2>Plugin Settings</h2>
-                <form method="post" action="options.php">
-                    <?php settings_fields('wrms_options_group'); ?>
-                    <label for="wrms_auto_sync">
-                        <input type="checkbox" id="wrms_auto_sync" name="wrms_auto_sync" value="1" <?php checked($auto_sync, '1'); ?> />
-                        Automatically sync product information to RankMath
-                    </label>
-                    <?php submit_button('Save Settings'); ?>
-                </form>
-            </div>
-        </div>
-
-        <div class="wrms-sidebar">
-            <div class="wrms-stats-box">
-                <h2>Plugin Statistics</h2>
-                <p>Total Products: <span id="total-products"><?php echo $stats['total_products']; ?></span></p>
-                <p>Synced Products: <span id="synced-products"><?php echo $stats['synced_count']; ?></span></p>
-                <p>Unsynced Products: <span id="unsynced-products"><?php echo $stats['unsynced_count']; ?></span></p>
-                <p>Sync Percentage: <span id="sync-percentage"><?php echo $stats['sync_percentage']; ?>%</span></p>
-                <p>Last Updated: <span id="last-updated"><?php echo $stats['last_updated']; ?></span></p>
-                <button id="update-stats" class="button button-secondary">Update Statistics</button>
-            </div>
-        </div>
-    </div>
-<?php
-}
-
-// Add this to handle the AJAX request for updating stats
-add_action('wp_ajax_wrms_update_stats', 'wrms_ajax_update_stats');
-function wrms_ajax_update_stats()
-{
-    check_ajax_referer('wrms_nonce', 'nonce');
-
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => 'Unauthorized access.'));
-        return;
-    }
-
-    $stats = wrms_calculate_and_cache_stats();
-    wp_send_json_success($stats);
-}
-
-// Modify the enqueue function to add the new AJAX action
+// Enqueue scripts and styles
 function wrms_enqueue_scripts($hook)
 {
     if ($hook != 'tools_page_woocommerce-rankmath-sync') {
@@ -194,8 +179,6 @@ function wrms_maybe_sync_product($post_id, $post, $update)
         return;
     }
 
-    // Your existing sync logic here
-    // Make sure to check if RankMath is active and only update if fields are empty
     if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
         $product = wc_get_product($post_id);
         if (!$product) return;
@@ -214,6 +197,36 @@ function wrms_maybe_sync_product($post_id, $post, $update)
         if (!get_post_meta($post_id, 'rank_math_focus_keyword', true)) {
             update_post_meta($post_id, 'rank_math_focus_keyword', $title);
         }
+        update_post_meta($post_id, '_wrms_synced', 1);
+    }
+}
+
+// Hook to save category
+add_action('edited_product_cat', 'wrms_maybe_sync_category', 10, 2);
+function wrms_maybe_sync_category($term_id, $tt_id)
+{
+    if (get_option('wrms_auto_sync', '0') !== '1') {
+        return;
+    }
+
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        $term = get_term($term_id, 'product_cat');
+        if (!$term) return;
+
+        $title = $term->name;
+        $description = $term->description;
+        $seo_description = wp_trim_words($description, 30, '...');
+
+        if (!get_term_meta($term_id, 'rank_math_title', true)) {
+            update_term_meta($term_id, 'rank_math_title', $title);
+        }
+        if (!get_term_meta($term_id, 'rank_math_description', true)) {
+            update_term_meta($term_id, 'rank_math_description', $seo_description);
+        }
+        if (!get_term_meta($term_id, 'rank_math_focus_keyword', true)) {
+            update_term_meta($term_id, 'rank_math_focus_keyword', $title);
+        }
+        update_term_meta($term_id, '_wrms_synced', 1);
     }
 }
 

@@ -17,6 +17,13 @@ jQuery(document).ready(function($) {
         syncProducts();
     });
 
+    // Sync Categories
+    $('#sync-categories').click(function() {
+        $('#progress-bar').show();
+        $('#sync-loader').show();
+        syncCategories();
+    });
+
     // Remove RankMath Meta
     $('#remove-rankmath-meta').click(function() {
         removeMeta();
@@ -43,11 +50,11 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     var stats = response.data;
-                    $('.wrms-stats-box p:eq(0)').text('Total Products: ' + stats.total_products);
-                    $('.wrms-stats-box p:eq(1)').text('Synced Products: ' + stats.synced_count);
-                    $('.wrms-stats-box p:eq(2)').text('Unsynced Products: ' + stats.unsynced_count);
-                    $('.wrms-stats-box p:eq(3)').text('Sync Percentage: ' + stats.sync_percentage + '%');
-                    $('.wrms-stats-box p:eq(4)').text('Last Updated: ' + stats.last_updated);
+                    $('#total-products').text(stats.total_products);
+                    $('#synced-products').text(stats.synced_count);
+                    $('#unsynced-products').text(stats.unsynced_count);
+                    $('#sync-percentage').text(stats.sync_percentage + '%');
+                    $('#last-updated').text(stats.last_updated);
                 } else {
                     alert('Failed to update statistics. Please try again.');
                 }
@@ -120,7 +127,7 @@ jQuery(document).ready(function($) {
 
     function updateAutoSync(isChecked) {
         $.ajax({
-            url: ajaxurl,
+            url: wrms_data.ajax_url,
             method: 'POST',
             data: {
                 action: 'wrms_update_auto_sync',
@@ -145,7 +152,7 @@ jQuery(document).ready(function($) {
         var processedProducts = 0;
 
         $.ajax({
-            url: ajaxurl,
+            url: wrms_data.ajax_url,
             method: 'POST',
             data: {
                 action: 'wrms_get_product_count',
@@ -171,7 +178,7 @@ jQuery(document).ready(function($) {
 
         function processNextProduct() {
             $.ajax({
-                url: ajaxurl,
+                url: wrms_data.ajax_url,
                 method: 'POST',
                 data: {
                     action: 'wrms_sync_next_product',
@@ -212,12 +219,45 @@ jQuery(document).ready(function($) {
         }
     }
 
+    function syncCategories() {
+        $('#sync-loader').show();
+        $('#sync-log').html(''); // Clear log area
+        $('#progress-bar-fill').width('0%'); // Reset progress bar
+
+        $.ajax({
+            url: wrms_data.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'wrms_sync_categories',
+                nonce: wrms_data.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#sync-count').text('Processed ' + response.data.synced + ' of ' + response.data.total + ' categories');
+                    $('#sync-log').append('<p>Categories synced successfully!</p>');
+                    $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight);
+
+                    // Update progress bar
+                    var progress = (response.data.synced / response.data.total) * 100;
+                    $('#progress-bar-fill').width(progress + '%');
+                } else {
+                    $('#sync-status').append('<p>Error syncing categories: ' + response.data.message + '</p>');
+                }
+                $('#sync-loader').hide();
+            },
+            error: function(xhr, status, error) {
+                $('#sync-loader').hide();
+                $('#sync-status').append('<p>An error occurred during category syncing: ' + error + '</p>');
+            }
+        });
+    }
+
     function removeMeta() {
         var totalProducts = 0;
         var processedProducts = 0;
 
         $.ajax({
-            url: ajaxurl,
+            url: wrms_data.ajax_url,
             method: 'POST',
             data: {
                 action: 'wrms_get_product_count',
@@ -243,7 +283,7 @@ jQuery(document).ready(function($) {
 
         function processNextProduct() {
             $.ajax({
-                url: ajaxurl,
+                url: wrms_data.ajax_url,
                 method: 'POST',
                 data: {
                     action: 'wrms_remove_next_product',
