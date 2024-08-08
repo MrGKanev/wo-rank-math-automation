@@ -24,6 +24,20 @@ jQuery(document).ready(function($) {
         syncCategories();
     });
 
+    // Sync Pages
+    $('#sync-pages').click(function() {
+        $('#progress-bar').show();
+        $('#sync-loader').show();
+        syncPages();
+    });
+
+    // Sync Media
+    $('#sync-media').click(function() {
+        $('#progress-bar').show();
+        $('#sync-loader').show();
+        syncMedia();
+    });
+
     // Remove Product Meta
     $('#remove-product-meta').click(function() {
         $('#progress-bar').show();
@@ -38,12 +52,26 @@ jQuery(document).ready(function($) {
         removeCategoryMeta();
     });
 
+    // Remove Page Meta
+    $('#remove-page-meta').click(function() {
+        $('#progress-bar').show();
+        $('#sync-loader').show();
+        removePageMeta();
+    });
+
+    // Remove Media Meta
+    $('#remove-media-meta').click(function() {
+        $('#progress-bar').show();
+        $('#sync-loader').show();
+        removeMediaMeta();
+    });
+
     // Auto-sync toggle
     $('#wrms_auto_sync').on('change', function() {
         updateAutoSync($(this).is(':checked'));
     });
 
-    // Update Statistics
+ // Update Statistics
     $('#update-stats').on('click', function(e) {
         e.preventDefault();
         var button = $(this);
@@ -59,17 +87,29 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     var stats = response.data;
-                    $('#total-products').text(stats.total_products);
-                    $('#synced-products').text(stats.synced_count);
-                    $('#unsynced-products').text(stats.unsynced_count);
-                    $('#sync-percentage').text(stats.sync_percentage + '%');
-                    $('#last-updated').text(stats.last_updated);
+                    $('.wrms-stats-box').html(`
+                        <h2>Plugin Statistics</h2>
+                        <p>Total Products: <span id="total-products">${stats.total_products}</span></p>
+                        <p>Synced Products: <span id="synced-products">${stats.synced_products}</span></p>
+                        <p>Total Pages: <span id="total-pages">${stats.total_pages}</span></p>
+                        <p>Synced Pages: <span id="synced-pages">${stats.synced_pages}</span></p>
+                        <p>Total Media: <span id="total-media">${stats.total_media}</span></p>
+                        <p>Synced Media: <span id="synced-media">${stats.synced_media}</span></p>
+                        <p>Total Categories: <span id="total-categories">${stats.total_categories}</span></p>
+                        <p>Synced Categories: <span id="synced-categories">${stats.synced_categories}</span></p>
+                        <p>Total Items: <span id="total-items">${stats.total_items}</span></p>
+                        <p>Total Synced: <span id="total-synced">${stats.total_synced}</span></p>
+                        <p>Sync Percentage: <span id="sync-percentage">${stats.sync_percentage}%</span></p>
+                        <p>Last Updated: <span id="last-updated">${stats.last_updated}</span></p>
+                    `);
+                    $('.wrms-stats-box').append('<button id="update-stats" class="button button-secondary">Update Statistics</button>');
                 } else {
                     alert('Failed to update statistics. Please try again.');
                 }
             },
-            error: function() {
-                alert('An error occurred. Please try again.');
+            error: function(xhr, status, error) {
+                alert('An error occurred. Please try again. Error: ' + error);
+                console.log(xhr.responseText);
             },
             complete: function() {
                 button.prop('disabled', false).text('Update Statistics');
@@ -173,7 +213,7 @@ jQuery(document).ready(function($) {
                     $('#sync-count').text('Processing 0 of ' + totalProducts + ' products');
                     $('#sync-loader').show();
                     $('#sync-log').html(''); // Clear log area
-                    $('#progress-bar-fill').width('0%'); // Reset progress bar
+                    $('#progress-bar-fill').css('width', '0%'); // Reset progress bar
 
                     processNextProduct();
                 } else {
@@ -261,6 +301,72 @@ jQuery(document).ready(function($) {
         });
     }
 
+    function syncPages() {
+        $('#sync-loader').show();
+        $('#sync-log').html(''); // Clear log area
+        $('#progress-bar-fill').css('width', '0%'); // Reset progress bar
+
+        $.ajax({
+            url: wrms_data.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'wrms_sync_pages',
+                nonce: wrms_data.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#sync-count').text('Synced ' + response.data.synced + ' of ' + response.data.total + ' pages');
+                    $('#sync-log').append('<p>Pages synced successfully!</p>');
+                    $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight);
+
+                    // Update progress bar
+                    var progress = (response.data.synced / response.data.total) * 100;
+                    $('#progress-bar-fill').css('width', progress + '%');
+                } else {
+                    $('#sync-status').append('<p>Error syncing pages: ' + response.data.message + '</p>');
+                }
+                $('#sync-loader').hide();
+            },
+            error: function(xhr, status, error) {
+                $('#sync-loader').hide();
+                $('#sync-status').append('<p>An error occurred during page syncing: ' + error + '</p>');
+            }
+        });
+    }
+
+    function syncMedia() {
+        $('#sync-loader').show();
+        $('#sync-log').html(''); // Clear log area
+        $('#progress-bar-fill').css('width', '0%'); // Reset progress bar
+
+        $.ajax({
+            url: wrms_data.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'wrms_sync_media',
+                nonce: wrms_data.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#sync-count').text('Synced ' + response.data.synced + ' of ' + response.data.total + ' media items');
+                    $('#sync-log').append('<p>Media items synced successfully!</p>');
+                    $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight);
+
+                    // Update progress bar
+                    var progress = (response.data.synced / response.data.total) * 100;
+                    $('#progress-bar-fill').css('width', progress + '%');
+                } else {
+                    $('#sync-status').append('<p>Error syncing media: ' + response.data.message + '</p>');
+                }
+                $('#sync-loader').hide();
+            },
+            error: function(xhr, status, error) {
+                $('#sync-loader').hide();
+                $('#sync-status').append('<p>An error occurred during media syncing: ' + error + '</p>');
+            }
+        });
+    }
+
     function removeProductMeta() {
         $('#sync-loader').show();
         $('#sync-log').html(''); // Clear log area
@@ -294,8 +400,7 @@ jQuery(document).ready(function($) {
         });
     }
 
-
-    function removeCategoryMeta() {
+function removeCategoryMeta() {
         $('#sync-loader').show();
         $('#sync-log').html(''); // Clear log area
         $('#progress-bar-fill').css('width', '0%'); // Reset progress bar
@@ -328,75 +433,69 @@ jQuery(document).ready(function($) {
         });
     }
 
-    function removeMeta() {
-        var totalProducts = 0;
-        var processedProducts = 0;
+    function removePageMeta() {
+        $('#sync-loader').show();
+        $('#sync-log').html(''); // Clear log area
+        $('#progress-bar-fill').css('width', '0%'); // Reset progress bar
 
         $.ajax({
             url: wrms_data.ajax_url,
             method: 'POST',
             data: {
-                action: 'wrms_get_product_count',
+                action: 'wrms_remove_page_meta',
                 nonce: wrms_data.nonce
             },
             success: function(response) {
                 if (response.success) {
-                    totalProducts = response.data.count;
-                    $('#sync-count').text('Processing 0 of ' + totalProducts + ' products');
-                    $('#sync-loader').show();
-                    $('#sync-log').html(''); // Clear log area
-                    $('#progress-bar-fill').width('0%'); // Reset progress bar
+                    $('#sync-count').text('Removed meta from ' + response.data.removed + ' of ' + response.data.total + ' pages');
+                    $('#sync-log').append('<p>Page meta removed successfully!</p>');
+                    $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight);
 
-                    processNextProduct();
+                    // Update progress bar
+                    var progress = (response.data.removed / response.data.total) * 100;
+                    $('#progress-bar-fill').css('width', progress + '%');
                 } else {
-                    $('#sync-status').append('<p>Error retrieving product count: ' + response.data.message + '</p>');
+                    $('#sync-status').append('<p>Error removing page meta: ' + response.data.message + '</p>');
                 }
+                $('#sync-loader').hide();
             },
             error: function(xhr, status, error) {
-                $('#sync-status').append('<p>Error retrieving product count: ' + error + '</p>');
+                $('#sync-loader').hide();
+                $('#sync-status').append('<p>An error occurred during page meta removal: ' + error + '</p>');
             }
         });
+    }
 
-        function processNextProduct() {
-            $.ajax({
-                url: wrms_data.ajax_url,
-                method: 'POST',
-                data: {
-                    action: 'wrms_remove_next_product',
-                    nonce: wrms_data.nonce
-                },
-                success: function(response) {
-                    if (response.success && response.data.processed > 0) {
-                        processedProducts += response.data.processed;
-                        $('#sync-count').text('Processing ' + processedProducts + ' of ' + totalProducts + ' products');
+    function removeMediaMeta() {
+        $('#sync-loader').show();
+        $('#sync-log').html(''); // Clear log area
+        $('#progress-bar-fill').css('width', '0%'); // Reset progress bar
 
-                        // Update log area
-                        $('#sync-log').append('<p>Removed meta from product ' + processedProducts + ': ' + response.data.product.id + '</p>');
-                        $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight); // Scroll to bottom
+        $.ajax({
+            url: wrms_data.ajax_url,
+            method: 'POST',
+            data: {
+                action: 'wrms_remove_media_meta',
+                nonce: wrms_data.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#sync-count').text('Removed meta from ' + response.data.removed + ' of ' + response.data.total + ' media items');
+                    $('#sync-log').append('<p>Media meta removed successfully!</p>');
+                    $('#sync-log').scrollTop($('#sync-log')[0].scrollHeight);
 
-                        // Update progress bar
-                        var progress = (processedProducts / totalProducts) * 100;
-                        $('#progress-bar-fill').width(progress + '%');
-
-                        if (processedProducts < totalProducts) {
-                            processNextProduct();
-                        } else {
-                            $('#sync-loader').hide();
-                            $('#sync-status').append('<p>RankMath meta information removed from all products!</p>');
-                        }
-                    } else if (!response.success) {
-                        $('#sync-loader').hide();
-                        $('#sync-status').append('<p>Error processing product: ' + response.data.message + '</p>');
-                    } else {
-                        $('#sync-loader').hide();
-                        $('#sync-status').append('<p>All products have already had their meta removed or an error occurred.</p>');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    $('#sync-loader').hide();
-                    $('#sync-status').append('<p>An error occurred during meta removal: ' + error + '</p>');
+                    // Update progress bar
+                    var progress = (response.data.removed / response.data.total) * 100;
+                    $('#progress-bar-fill').css('width', progress + '%');
+                } else {
+                    $('#sync-status').append('<p>Error removing media meta: ' + response.data.message + '</p>');
                 }
-            });
-        }
+                $('#sync-loader').hide();
+            },
+            error: function(xhr, status, error) {
+                $('#sync-loader').hide();
+                $('#sync-status').append('<p>An error occurred during media meta removal: ' + error + '</p>');
+            }
+        });
     }
 });

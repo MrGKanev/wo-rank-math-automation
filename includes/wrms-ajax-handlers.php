@@ -148,6 +148,22 @@ function wrms_remove_product_meta()
     wp_send_json_success(array('removed' => $removed_count, 'total' => count($products)));
 }
 
+
+add_action('wp_ajax_wrms_update_stats', 'wrms_ajax_update_stats');
+
+function wrms_ajax_update_stats()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    $stats = wrms_calculate_and_cache_stats();
+    wp_send_json_success($stats);
+}
+
 function wrms_remove_category_meta()
 {
     if (!current_user_can('manage_options')) {
@@ -262,6 +278,178 @@ function wrms_sync_categories()
         wp_send_json_error(array('message' => 'RankMath SEO plugin is not active.'));
     }
 }
+
+add_action('wp_ajax_wrms_sync_pages', 'wrms_sync_pages');
+add_action('wp_ajax_wrms_sync_media', 'wrms_sync_media');
+add_action('wp_ajax_wrms_remove_page_meta', 'wrms_remove_page_meta');
+add_action('wp_ajax_wrms_remove_media_meta', 'wrms_remove_media_meta');
+
+function wrms_sync_pages()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        $pages = get_posts(array(
+            'post_type' => 'page',
+            'posts_per_page' => -1,
+        ));
+
+        $total_pages = count($pages);
+        $synced_count = 0;
+
+        foreach ($pages as $page) {
+            $title = $page->post_title;
+            $content = $page->post_content;
+            $excerpt = has_excerpt($page->ID) ? get_the_excerpt($page) : wp_trim_words($content, 30, '...');
+
+            $meta_updated = false;
+
+            if (!get_post_meta($page->ID, 'rank_math_title', true)) {
+                update_post_meta($page->ID, 'rank_math_title', $title);
+                $meta_updated = true;
+            }
+            if (!get_post_meta($page->ID, 'rank_math_description', true)) {
+                update_post_meta($page->ID, 'rank_math_description', $excerpt);
+                $meta_updated = true;
+            }
+            if (!get_post_meta($page->ID, 'rank_math_focus_keyword', true)) {
+                update_post_meta($page->ID, 'rank_math_focus_keyword', $title);
+                $meta_updated = true;
+            }
+
+            if ($meta_updated) {
+                update_post_meta($page->ID, '_wrms_synced', 1);
+                $synced_count++;
+            }
+        }
+
+        wp_send_json_success(array('synced' => $synced_count, 'total' => $total_pages));
+    } else {
+        wp_send_json_error(array('message' => 'RankMath SEO plugin is not active.'));
+    }
+}
+
+function wrms_sync_media()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        $attachments = get_posts(array(
+            'post_type' => 'attachment',
+            'posts_per_page' => -1,
+        ));
+
+        $total_attachments = count($attachments);
+        $synced_count = 0;
+
+        foreach ($attachments as $attachment) {
+            $title = $attachment->post_title;
+            $alt_text = get_post_meta($attachment->ID, '_wp_attachment_image_alt', true);
+            $description = wp_get_attachment_caption($attachment->ID);
+
+            $meta_updated = false;
+
+            if (!get_post_meta($attachment->ID, 'rank_math_title', true)) {
+                update_post_meta($attachment->ID, 'rank_math_title', $title);
+                $meta_updated = true;
+            }
+            if (!get_post_meta($attachment->ID, 'rank_math_description', true)) {
+                update_post_meta($attachment->ID, 'rank_math_description', $description ? $description : $alt_text);
+                $meta_updated = true;
+            }
+            if (!get_post_meta($attachment->ID, 'rank_math_focus_keyword', true)) {
+                update_post_meta($attachment->ID, 'rank_math_focus_keyword', $title);
+                $meta_updated = true;
+            }
+
+            if ($meta_updated) {
+                update_post_meta($attachment->ID, '_wrms_synced', 1);
+                $synced_count++;
+            }
+        }
+
+        wp_send_json_success(array('synced' => $synced_count, 'total' => $total_attachments));
+    } else {
+        wp_send_json_error(array('message' => 'RankMath SEO plugin is not active.'));
+    }
+}
+
+function wrms_remove_page_meta()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    $pages = get_posts(array(
+        'post_type' => 'page',
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'EXISTS'
+            )
+        )
+    ));
+
+    $removed_count = 0;
+
+    foreach ($pages as $page) {
+        delete_post_meta($page->ID, 'rank_math_title');
+        delete_post_meta($page->ID, 'rank_math_description');
+        delete_post_meta($page->ID, 'rank_math_focus_keyword');
+        delete_post_meta($page->ID, '_wrms_synced');
+        $removed_count++;
+    }
+
+    wp_send_json_success(array('removed' => $removed_count, 'total' => count($pages)));
+}
+
+function wrms_remove_media_meta()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    $attachments = get_posts(array(
+        'post_type' => 'attachment',
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'EXISTS'
+            )
+        )
+    ));
+
+    $removed_count = 0;
+
+    foreach ($attachments as $attachment) {
+        delete_post_meta($attachment->ID, 'rank_math_title');
+        delete_post_meta($attachment->ID, 'rank_math_description');
+        delete_post_meta($attachment->ID, 'rank_math_focus_keyword');
+        delete_post_meta($attachment->ID, '_wrms_synced');
+        $removed_count++;
+    }
+
+    wp_send_json_success(array('removed' => $removed_count, 'total' => count($attachments)));
+}
+
 
 function wrms_ajax_get_urls()
 {

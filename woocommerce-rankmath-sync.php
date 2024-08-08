@@ -57,10 +57,14 @@ function wrms_admin_page()
                 <div class="sync-buttons">
                     <button id="sync-products" class="button button-primary">Sync Products</button>
                     <button id="sync-categories" class="button button-primary">Sync Categories</button>
+                    <button id="sync-pages" class="button button-primary">Sync Pages</button>
+                    <button id="sync-media" class="button button-primary">Sync Media</button>
                 </div>
                 <div class="remove-buttons">
                     <button id="remove-product-meta" class="button button-secondary">Remove Product Meta</button>
                     <button id="remove-category-meta" class="button button-secondary">Remove Category Meta</button>
+                    <button id="remove-page-meta" class="button button-secondary">Remove Page Meta</button>
+                    <button id="remove-media-meta" class="button button-secondary">Remove Media Meta</button>
                 </div>
                 <div id="sync-status" class="wrms-status-box">
                     <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none;" />
@@ -113,10 +117,67 @@ function wrms_admin_page()
 <?php
 }
 
+// Hook to save page
+add_action('save_post_page', 'wrms_maybe_sync_page', 10, 3);
+function wrms_maybe_sync_page($post_id, $post, $update)
+{
+    if (get_option('wrms_auto_sync', '0') !== '1') {
+        return;
+    }
+
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        $title = get_the_title($post_id);
+        $content = get_post_field('post_content', $post_id);
+        $excerpt = has_excerpt($post_id) ? get_the_excerpt($post_id) : wp_trim_words($content, 30, '...');
+
+        if (!get_post_meta($post_id, 'rank_math_title', true)) {
+            update_post_meta($post_id, 'rank_math_title', $title);
+        }
+        if (!get_post_meta($post_id, 'rank_math_description', true)) {
+            update_post_meta($post_id, 'rank_math_description', $excerpt);
+        }
+        if (!get_post_meta($post_id, 'rank_math_focus_keyword', true)) {
+            update_post_meta($post_id, 'rank_math_focus_keyword', $title);
+        }
+        update_post_meta($post_id, '_wrms_synced', 1);
+    }
+}
+
+// Hook to save media
+add_action('add_attachment', 'wrms_maybe_sync_media');
+add_action('edit_attachment', 'wrms_maybe_sync_media');
+function wrms_maybe_sync_media($post_id)
+{
+    if (get_option('wrms_auto_sync', '0') !== '1') {
+        return;
+    }
+
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        $title = get_the_title($post_id);
+        $alt_text = get_post_meta($post_id, '_wp_attachment_image_alt', true);
+        $description = wp_get_attachment_caption($post_id);
+
+        if (!get_post_meta($post_id, 'rank_math_title', true)) {
+            update_post_meta($post_id, 'rank_math_title', $title);
+        }
+        if (!get_post_meta($post_id, 'rank_math_description', true)) {
+            update_post_meta($post_id, 'rank_math_description', $description ? $description : $alt_text);
+        }
+        if (!get_post_meta($post_id, 'rank_math_focus_keyword', true)) {
+            update_post_meta($post_id, 'rank_math_focus_keyword', $title);
+        }
+        update_post_meta($post_id, '_wrms_synced', 1);
+    }
+}
+
 // Function to calculate and cache statistics
 function wrms_calculate_and_cache_stats()
 {
     $total_products = wp_count_posts('product')->publish;
+    $total_pages = wp_count_posts('page')->publish;
+    $total_media = wp_count_posts('attachment')->inherit;
+    $total_categories = wp_count_terms('product_cat');
+
     $synced_products = get_posts(array(
         'post_type' => 'product',
         'posts_per_page' => -1,
@@ -128,14 +189,64 @@ function wrms_calculate_and_cache_stats()
             )
         )
     ));
-    $synced_count = count($synced_products);
-    $unsynced_count = $total_products - $synced_count;
-    $sync_percentage = $total_products > 0 ? round(($synced_count / $total_products) * 100, 2) : 0;
+
+    $synced_pages = get_posts(array(
+        'post_type' => 'page',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'meta_query' => array(
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'EXISTS'
+            )
+        )
+    ));
+
+    $synced_media = get_posts(array(
+        'post_type' => 'attachment',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'meta_query' => array(
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'EXISTS'
+            )
+        )
+    ));
+
+    $synced_categories = get_terms(array(
+            'taxonomy' => 'product_cat',
+            'hide_empty' => false,
+            'fields' => 'ids',
+            'meta_query' => array(
+                array(
+                    'key' => '_wrms_synced',
+                    'compare' => 'EXISTS'
+                )
+            )
+        ));
+
+    $synced_product_count = count($synced_products);
+    $synced_page_count = count($synced_pages);
+    $synced_media_count = count($synced_media);
+    $synced_category_count = count($synced_categories);
+
+    $total_items = $total_products + $total_pages + $total_media + $total_categories;
+    $total_synced = $synced_product_count + $synced_page_count + $synced_media_count + $synced_category_count;
+
+    $sync_percentage = $total_items > 0 ? round(($total_synced / $total_items) * 100, 2) : 0;
 
     $stats = array(
         'total_products' => $total_products,
-        'synced_count' => $synced_count,
-        'unsynced_count' => $unsynced_count,
+        'total_pages' => $total_pages,
+        'total_media' => $total_media,
+        'total_categories' => $total_categories,
+        'synced_products' => $synced_product_count,
+        'synced_pages' => $synced_page_count,
+        'synced_media' => $synced_media_count,
+        'synced_categories' => $synced_category_count,
+        'total_items' => $total_items,
+        'total_synced' => $total_synced,
         'sync_percentage' => $sync_percentage,
         'last_updated' => current_time('mysql')
     );
