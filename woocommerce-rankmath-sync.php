@@ -90,15 +90,27 @@ function wrms_admin_page()
 
             <div id="url-download" class="wrms-tab-pane">
                 <h2>Download WordPress URLs</h2>
-                <p>Select the types of URLs you want to download. URLs will be downloaded in chunks of 2000.</p>
-                <form id="url-download-form">
-                    <label><input type="checkbox" name="url_types[]" value="product" checked> Products</label>
-                    <label><input type="checkbox" name="url_types[]" value="page"> Pages</label>
-                    <label><input type="checkbox" name="url_types[]" value="category"> Categories</label>
-                    <label><input type="checkbox" name="url_types[]" value="tag"> Tags</label>
-                    <button id="download-urls" class="button button-primary">Download URLs</button>
-                </form>
-                <div id="download-status" class="wrms-status-box"></div>
+                <div class="wrms-url-options">
+                    <h3>Select URL Types</h3>
+                    <p>Choose the types of URLs you want to download:</p>
+                    <form id="url-download-form">
+                        <label><input type="checkbox" name="url_types[]" value="product" checked> Products</label>
+                        <label><input type="checkbox" name="url_types[]" value="page"> Pages</label>
+                        <label><input type="checkbox" name="url_types[]" value="category"> Categories</label>
+                        <label><input type="checkbox" name="url_types[]" value="tag"> Tags</label>
+                        <button id="download-urls" class="button button-primary">Download URLs</button>
+                    </form>
+                </div>
+                <div id="download-status" class="wrms-status-box">
+                    <img id="download-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none;" />
+                    <p id="download-count"></p>
+                    <div id="download-log" class="sync-log">
+                        <?php echo esc_html__('URL download logs will appear here once you start the download process.', 'woocommerce-rankmath-sync'); ?>
+                    </div>
+                    <div id="download-progress-bar" class="progress-bar">
+                        <div id="download-progress-bar-fill" class="progress-bar-fill"></div>
+                    </div>
+                </div>
             </div>
 
             <div id="settings" class="wrms-tab-pane">

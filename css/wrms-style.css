@@ -1,3 +1,4 @@
+/* Base font size for rem calculations */
 html {
     font-size: 16px;
     /* This sets 1rem to 16px */
@@ -9,42 +10,47 @@ html {
     margin-top: 1.25rem;
 }
 
+/* Tab styles */
 .wrms-tabs {
-    width: 100%;
-    margin-bottom: 0;
+    display: flex;
     border-bottom: 0.0625rem solid #ccc;
+    margin-bottom: 1.25rem;
+    width: 100%;
 }
 
 .wrms-tab-link {
     background-color: #f1f1f1;
-    border: none;
-    outline: none;
+    border: 0.0625rem solid #ccc;
+    border-bottom: none;
+    color: #23282d;
     cursor: pointer;
     padding: 0.625rem 1.25rem;
-    transition: 0.3s;
-    font-size: 1.0625rem;
-    margin-bottom: -0.0625rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-right: 0.3125rem;
+    transition: background-color 0.3s ease;
 }
 
 .wrms-tab-link:hover {
-    background-color: #ddd;
+    background-color: #e5e5e5;
 }
 
 .wrms-tab-link.active {
     background-color: #fff;
-    border: 0.0625rem solid #ccc;
     border-bottom: 0.0625rem solid #fff;
+    margin-bottom: -0.0625rem;
 }
 
 .wrms-tab-content {
+    background-color: #fff;
+    border: 0.0625rem solid #ccc;
+    border-top: none;
+    padding: 1.25rem;
     flex: 1;
-    padding-right: 1.25rem;
 }
 
 .wrms-tab-pane {
     display: none;
-    padding: 1.25rem;
-    background-color: #fff;
 }
 
 .wrms-tab-pane.active {
@@ -53,19 +59,22 @@ html {
 
 .wrms-sidebar {
     width: 18.75rem;
+    margin-left: 1.25rem;
 }
 
 .wrms-stats-box,
 .wrms-status-box {
-    background: #fff;
+    background-color: #fff;
     border: 0.0625rem solid #ccc;
     padding: 0.9375rem;
     margin-bottom: 1.25rem;
+    border-radius: 0.3125rem;
 }
 
 .wrms-stats-box h2,
 .wrms-tab-pane h2 {
     margin-top: 0;
+    margin-bottom: 1rem;
 }
 
 .wrms-button-grid {
@@ -100,25 +109,26 @@ html {
     margin-bottom: 0;
 }
 
-#sync-status {
+.wrms-status-box {
     margin-top: 1.25rem;
-    background-color: #fff;
-    border: 0.0625rem solid #e5e5e5;
-    border-radius: 0.3125rem;
-    padding: 1.25rem;
 }
 
-#sync-count {
+.wrms-status-box img {
+    vertical-align: middle;
+    margin-right: 0.625rem;
+}
+
+#sync-count,
+#download-count {
     font-size: 1.125rem;
     font-weight: bold;
     margin-bottom: 0.625rem;
 }
 
-.sync-log {
+.sync-log,
+.download-log {
     height: 18.75rem;
-    /* Increased from max-height to a fixed height */
     min-height: 18.75rem;
-    /* Ensure a minimum height */
     overflow-y: auto;
     border: 0.0625rem solid #e5e5e5;
     padding: 0.9375rem;
@@ -131,7 +141,7 @@ html {
     word-wrap: break-word;
 }
 
-#progress-bar {
+.progress-bar {
     height: 1.25rem;
     background-color: #e5e5e5;
     border-radius: 0.625rem;
@@ -139,23 +149,69 @@ html {
     margin-top: 0.9375rem;
 }
 
-#progress-bar-fill {
+.progress-bar-fill {
     height: 100%;
     background-color: #0073aa;
     width: 0;
     transition: width 0.3s ease-in-out;
 }
 
-#sync-loader {
-    vertical-align: middle;
-    margin-right: 0.625rem;
+.wrms-url-options {
+    margin-bottom: 1.25rem;
+}
+
+.wrms-url-options h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.125rem;
+}
+
+.wrms-url-options p {
+    margin-bottom: 1rem;
+}
+
+.wrms-url-options label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+#url-download-form {
+    margin-bottom: 1rem;
+}
+
+#download-urls {
+    margin-top: 1rem;
 }
 
 /* Responsive adjustments */
 @media screen and (max-width: 48.875rem) {
 
     /* 782px */
+    .wrms-admin-page {
+        flex-direction: column;
+    }
+
+    .wrms-tabs {
+        flex-direction: column;
+    }
+
+    .wrms-tab-link {
+        margin-right: 0;
+        margin-bottom: 0.3125rem;
+    }
+
+    .wrms-tab-link.active {
+        border-bottom: 0.0625rem solid #ccc;
+        margin-bottom: 0.3125rem;
+    }
+
     .wrms-button-grid {
         grid-template-columns: 1fr;
+    }
+
+    .wrms-sidebar {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 1.25rem;
     }
 }
