@@ -10,6 +10,7 @@
  * Requires Plugins:        seo-by-rank-math
  * Requires at least:       6.0
  * Requires PHP:            7.4
+ * Tested up to:            6.6.1
  */
 
 // Exit if accessed directly.
