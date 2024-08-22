@@ -6,7 +6,8 @@
  * Version:                 0.0.3
  * Author:                  Gabriel Kanev
  * Author URI:              https://gkanev.com
- * License:                 MIT
+ * License:                 GPL-2.0 License
+ * Requires Plugins:        seo-by-rank-math
  * Requires at least:       6.0
  * Requires PHP:            7.4
  */
