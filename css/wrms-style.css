@@ -14,7 +14,6 @@ html {
 .wrms-tabs {
     display: flex;
     border-bottom: 0.0625rem solid #ccc;
-    margin-bottom: 1.25rem;
     width: 100%;
 }
 
@@ -67,7 +66,8 @@ html {
     background-color: #fff;
     border: 0.0625rem solid #ccc;
     padding: 0.9375rem;
-    margin-bottom: 1.25rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
     border-radius: 0.3125rem;
 }
 
@@ -137,7 +137,6 @@ html {
     font-family: monospace;
     font-size: 0.875rem;
     line-height: 1.4;
-    white-space: pre-wrap;
     word-wrap: break-word;
 }
 

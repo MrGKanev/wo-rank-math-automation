@@ -9,7 +9,16 @@ add_action('wp_ajax_wrms_remove_next_product', 'wrms_remove_next_product');
 add_action('wp_ajax_wrms_get_product_count', 'wrms_get_product_count');
 add_action('wp_ajax_wrms_update_auto_sync', 'wrms_update_auto_sync');
 add_action('wp_ajax_wrms_sync_categories', 'wrms_sync_categories');
+add_action('wp_ajax_wrms_sync_pages', 'wrms_sync_pages');
+add_action('wp_ajax_wrms_sync_media', 'wrms_sync_media');
+add_action('wp_ajax_wrms_sync_posts', 'wrms_sync_posts');
+add_action('wp_ajax_wrms_remove_product_meta', 'wrms_remove_product_meta');
+add_action('wp_ajax_wrms_remove_category_meta', 'wrms_remove_category_meta');
+add_action('wp_ajax_wrms_remove_page_meta', 'wrms_remove_page_meta');
+add_action('wp_ajax_wrms_remove_media_meta', 'wrms_remove_media_meta');
+add_action('wp_ajax_wrms_remove_post_meta', 'wrms_remove_post_meta');
 add_action('wp_ajax_wrms_get_urls', 'wrms_ajax_get_urls');
+add_action('wp_ajax_wrms_update_stats', 'wrms_ajax_update_stats');
 
 function wrms_sync_next_product()
 {
@@ -110,9 +119,6 @@ function wrms_remove_next_product()
     }
 }
 
-add_action('wp_ajax_wrms_remove_product_meta', 'wrms_remove_product_meta');
-add_action('wp_ajax_wrms_remove_category_meta', 'wrms_remove_category_meta');
-
 function wrms_remove_product_meta()
 {
     if (!current_user_can('manage_options')) {
@@ -146,49 +152,6 @@ function wrms_remove_product_meta()
     }
 
     wp_send_json_success(array('removed' => $removed_count, 'total' => count($products)));
-}
-
-
-add_action('wp_ajax_wrms_update_stats', 'wrms_ajax_update_stats');
-
-function wrms_ajax_update_stats()
-{
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => 'Unauthorized access.'));
-        return;
-    }
-
-    check_ajax_referer('wrms_nonce', 'nonce');
-
-    $stats = wrms_calculate_and_cache_stats();
-    wp_send_json_success($stats);
-}
-
-function wrms_remove_category_meta()
-{
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => 'Unauthorized access.'));
-        return;
-    }
-
-    check_ajax_referer('wrms_nonce', 'nonce');
-
-    $categories = get_terms(array(
-        'taxonomy' => 'product_cat',
-        'hide_empty' => false,
-    ));
-
-    $removed_count = 0;
-
-    foreach ($categories as $category) {
-        delete_term_meta($category->term_id, 'rank_math_title');
-        delete_term_meta($category->term_id, 'rank_math_description');
-        delete_term_meta($category->term_id, 'rank_math_focus_keyword');
-        delete_term_meta($category->term_id, '_wrms_synced');
-        $removed_count++;
-    }
-
-    wp_send_json_success(array('removed' => $removed_count, 'total' => count($categories)));
 }
 
 function wrms_get_product_count()
@@ -278,11 +241,6 @@ function wrms_sync_categories()
         wp_send_json_error(array('message' => 'RankMath SEO plugin is not active.'));
     }
 }
-
-add_action('wp_ajax_wrms_sync_pages', 'wrms_sync_pages');
-add_action('wp_ajax_wrms_sync_media', 'wrms_sync_media');
-add_action('wp_ajax_wrms_remove_page_meta', 'wrms_remove_page_meta');
-add_action('wp_ajax_wrms_remove_media_meta', 'wrms_remove_media_meta');
 
 function wrms_sync_pages()
 {
@@ -384,6 +342,83 @@ function wrms_sync_media()
     }
 }
 
+function wrms_sync_posts()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        $posts = get_posts(array(
+            'post_type' => 'post',
+            'posts_per_page' => -1,
+        ));
+
+        $total_posts = count($posts);
+        $synced_count = 0;
+
+        foreach ($posts as $post) {
+            $title = $post->post_title;
+            $content = $post->post_content;
+            $excerpt = has_excerpt($post->ID) ? get_the_excerpt($post) : wp_trim_words($content, 30, '...');
+
+            $meta_updated = false;
+
+            if (!get_post_meta($post->ID, 'rank_math_title', true)) {
+                update_post_meta($post->ID, 'rank_math_title', $title);
+                $meta_updated = true;
+            }
+            if (!get_post_meta($post->ID, 'rank_math_description', true)) {
+                update_post_meta($post->ID, 'rank_math_description', $excerpt);
+                $meta_updated = true;
+            }
+            if (!get_post_meta($post->ID, 'rank_math_focus_keyword', true)) {
+                update_post_meta($post->ID, 'rank_math_focus_keyword', $title);
+                $meta_updated = true;
+            }
+
+            if ($meta_updated) {
+                update_post_meta($post->ID, '_wrms_synced', 1);
+                $synced_count++;
+            }
+        }
+
+        wp_send_json_success(array('synced' => $synced_count, 'total' => $total_posts));
+    } else {
+        wp_send_json_error(array('message' => 'RankMath SEO plugin is not active.'));
+    }
+}
+
+function wrms_remove_category_meta()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    $categories = get_terms(array(
+        'taxonomy' => 'product_cat',
+        'hide_empty' => false,
+    ));
+
+    $removed_count = 0;
+
+    foreach ($categories as $category) {
+        delete_term_meta($category->term_id, 'rank_math_title');
+        delete_term_meta($category->term_id, 'rank_math_description');
+        delete_term_meta($category->term_id, 'rank_math_focus_keyword');
+        delete_term_meta($category->term_id, '_wrms_synced');
+        $removed_count++;
+    }
+
+    wp_send_json_success(array('removed' => $removed_count, 'total' => count($categories)));
+}
+
 function wrms_remove_page_meta()
 {
     if (!current_user_can('manage_options')) {
@@ -450,6 +485,38 @@ function wrms_remove_media_meta()
     wp_send_json_success(array('removed' => $removed_count, 'total' => count($attachments)));
 }
 
+function wrms_remove_post_meta()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    $posts = get_posts(array(
+        'post_type' => 'post',
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'EXISTS'
+            )
+        )
+    ));
+
+    $removed_count = 0;
+
+    foreach ($posts as $post) {
+        delete_post_meta($post->ID, 'rank_math_title');
+        delete_post_meta($post->ID, 'rank_math_description');
+        delete_post_meta($post->ID, 'rank_math_focus_keyword');
+        delete_post_meta($post->ID, '_wrms_synced');
+        $removed_count++;
+    }
+
+    wp_send_json_success(array('removed' => $removed_count, 'total' => count($posts)));
+}
 
 function wrms_ajax_get_urls()
 {
@@ -465,25 +532,39 @@ function wrms_ajax_get_urls()
     $url_types = isset($_POST['url_types']) ? $_POST['url_types'] : array();
 
     $urls = array();
+    $total_items = 0;
 
     foreach ($url_types as $type) {
         switch ($type) {
             case 'product':
-                $urls = array_merge($urls, wrms_get_product_urls($offset, $chunk_size));
+                $product_urls = wrms_get_product_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $product_urls['urls']);
+                $total_items += $product_urls['total'];
                 break;
             case 'page':
-                $urls = array_merge($urls, wrms_get_page_urls($offset, $chunk_size));
+                $page_urls = wrms_get_page_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $page_urls['urls']);
+                $total_items += $page_urls['total'];
                 break;
             case 'category':
-                $urls = array_merge($urls, wrms_get_category_urls($offset, $chunk_size));
+                $category_urls = wrms_get_category_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $category_urls['urls']);
+                $total_items += $category_urls['total'];
                 break;
             case 'tag':
-                $urls = array_merge($urls, wrms_get_tag_urls($offset, $chunk_size));
+                $tag_urls = wrms_get_tag_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $tag_urls['urls']);
+                $total_items += $tag_urls['total'];
+                break;
+            case 'post':
+                $post_urls = wrms_get_post_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $post_urls['urls']);
+                $total_items += $post_urls['total'];
                 break;
         }
     }
 
-    wp_send_json_success(array('urls' => $urls));
+    wp_send_json_success(array('urls' => $urls, 'total' => $total_items));
 }
 
 function wrms_get_product_urls($offset, $chunk_size)
@@ -496,7 +577,11 @@ function wrms_get_product_urls($offset, $chunk_size)
     );
 
     $product_ids = get_posts($args);
-    return array_map('get_permalink', $product_ids);
+    $total_products = wp_count_posts('product')->publish;
+    return array(
+        'urls' => array_map('get_permalink', $product_ids),
+        'total' => $total_products
+    );
 }
 
 function wrms_get_page_urls($offset, $chunk_size)
@@ -509,7 +594,11 @@ function wrms_get_page_urls($offset, $chunk_size)
     );
 
     $page_ids = get_posts($args);
-    return array_map('get_permalink', $page_ids);
+    $total_pages = wp_count_posts('page')->publish;
+    return array(
+        'urls' => array_map('get_permalink', $page_ids),
+        'total' => $total_pages
+    );
 }
 
 function wrms_get_category_urls($offset, $chunk_size)
@@ -521,7 +610,11 @@ function wrms_get_category_urls($offset, $chunk_size)
         'number' => $chunk_size,
     ));
 
-    return array_map('get_category_link', wp_list_pluck($categories, 'term_id'));
+    $total_categories = wp_count_terms('category');
+    return array(
+        'urls' => array_map('get_category_link', wp_list_pluck($categories, 'term_id')),
+        'total' => $total_categories
+    );
 }
 
 function wrms_get_tag_urls($offset, $chunk_size)
@@ -533,7 +626,41 @@ function wrms_get_tag_urls($offset, $chunk_size)
         'number' => $chunk_size,
     ));
 
-    return array_map('get_tag_link', wp_list_pluck($tags, 'term_id'));
+    $total_tags = wp_count_terms('post_tag');
+    return array(
+        'urls' => array_map('get_tag_link', wp_list_pluck($tags, 'term_id')),
+        'total' => $total_tags
+    );
+}
+
+function wrms_get_post_urls($offset, $chunk_size)
+{
+    $args = array(
+        'post_type' => 'post',
+        'posts_per_page' => $chunk_size,
+        'offset' => $offset,
+        'fields' => 'ids'
+    );
+
+    $post_ids = get_posts($args);
+    $total_posts = wp_count_posts('post')->publish;
+    return array(
+        'urls' => array_map('get_permalink', $post_ids),
+        'total' => $total_posts
+    );
+}
+
+function wrms_ajax_update_stats()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized access.'));
+        return;
+    }
+
+    check_ajax_referer('wrms_nonce', 'nonce');
+
+    $stats = wrms_calculate_and_cache_stats();
+    wp_send_json_success($stats);
 }
 
 // Ensure the function to check plugin is active is loaded

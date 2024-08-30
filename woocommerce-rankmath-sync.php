@@ -2,8 +2,8 @@
 /*
  * Plugin Name:             WooCommerce RankMath Sync
  * Plugin URI:              https://github.com/MrGKanev/wo-rank-math-automation/
- * Description:             Copies WooCommerce product and category information to RankMath's meta information.
- * Version:                 0.0.3
+ * Description:             Copies WooCommerce product, category, WordPress post, page, and media information to RankMath's meta information.
+ * Version:                 0.0.4
  * Author:                  Gabriel Kanev
  * Author URI:              https://gkanev.com
  * License:                 GPL-2.0 License
@@ -77,6 +77,11 @@ function wrms_admin_page()
                         <button id="sync-media" class="button button-primary">Sync Media</button>
                         <button id="remove-media-meta" class="button button-secondary">Remove Media Meta</button>
                     </div>
+                    <div class="wrms-button-group">
+                        <h3>Posts</h3>
+                        <button id="sync-posts" class="button button-primary">Sync Posts</button>
+                        <button id="remove-post-meta" class="button button-secondary">Remove Post Meta</button>
+                    </div>
                 </div>
                 <div id="sync-status" class="wrms-status-box">
                     <img id="sync-loader" src="<?php echo admin_url('images/spinner.gif'); ?>" style="display:none;" />
@@ -100,6 +105,7 @@ function wrms_admin_page()
                         <label><input type="checkbox" name="url_types[]" value="page"> Pages</label>
                         <label><input type="checkbox" name="url_types[]" value="category"> Categories</label>
                         <label><input type="checkbox" name="url_types[]" value="tag"> Tags</label>
+                        <label><input type="checkbox" name="url_types[]" value="post"> Posts</label>
                         <button id="download-urls" class="button button-primary">Download URLs</button>
                     </form>
                 </div>
@@ -139,6 +145,8 @@ function wrms_admin_page()
                 <p>Synced Media: <span id="synced-media"><?php echo $stats['synced_media']; ?></span></p>
                 <p>Total Categories: <span id="total-categories"><?php echo $stats['total_categories']; ?></span></p>
                 <p>Synced Categories: <span id="synced-categories"><?php echo $stats['synced_categories']; ?></span></p>
+                <p>Total Posts: <span id="total-posts"><?php echo $stats['total_posts']; ?></span></p>
+                <p>Synced Posts: <span id="synced-posts"><?php echo $stats['synced_posts']; ?></span></p>
                 <p>Total Items: <span id="total-items"><?php echo $stats['total_items']; ?></span></p>
                 <p>Total Synced: <span id="total-synced"><?php echo $stats['total_synced']; ?></span></p>
                 <p>Sync Percentage: <span id="sync-percentage"><?php echo $stats['sync_percentage']; ?>%</span></p>
@@ -157,6 +165,7 @@ function wrms_calculate_and_cache_stats()
     $total_pages = wp_count_posts('page')->publish;
     $total_media = wp_count_posts('attachment')->inherit;
     $total_categories = wp_count_terms('product_cat');
+    $total_posts = wp_count_posts('post')->publish;
 
     $synced_products = count(get_posts(array(
         'post_type' => 'product',
@@ -206,8 +215,20 @@ function wrms_calculate_and_cache_stats()
         )
     )));
 
-    $total_items = $total_products + $total_pages + $total_media + $total_categories;
-    $total_synced = $synced_products + $synced_pages + $synced_media + $synced_categories;
+    $synced_posts = count(get_posts(array(
+        'post_type' => 'post',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'meta_query' => array(
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'EXISTS'
+            )
+        )
+    )));
+
+    $total_items = $total_products + $total_pages + $total_media + $total_categories + $total_posts;
+    $total_synced = $synced_products + $synced_pages + $synced_media + $synced_categories + $synced_posts;
 
     $sync_percentage = $total_items > 0 ? round(($total_synced / $total_items) * 100, 2) : 0;
 
@@ -216,10 +237,12 @@ function wrms_calculate_and_cache_stats()
         'total_pages' => $total_pages,
         'total_media' => $total_media,
         'total_categories' => $total_categories,
+        'total_posts' => $total_posts,
         'synced_products' => $synced_products,
         'synced_pages' => $synced_pages,
         'synced_media' => $synced_media,
         'synced_categories' => $synced_categories,
+        'synced_posts' => $synced_posts,
         'total_items' => $total_items,
         'total_synced' => $total_synced,
         'sync_percentage' => $sync_percentage,
@@ -374,6 +397,32 @@ function wrms_maybe_sync_media($post_id)
     }
 }
 
+// Hook to save post
+add_action('save_post', 'wrms_maybe_sync_post', 10, 3);
+function wrms_maybe_sync_post($post_id, $post, $update)
+{
+    if (get_option('wrms_auto_sync', '0') !== '1' || $post->post_type !== 'post') {
+        return;
+    }
+
+    if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+        $title = get_the_title($post_id);
+        $content = get_post_field('post_content', $post_id);
+        $excerpt = has_excerpt($post_id) ? get_the_excerpt($post_id) : wp_trim_words($content, 30, '...');
+
+        if (!get_post_meta($post_id, 'rank_math_title', true)) {
+            update_post_meta($post_id, 'rank_math_title', $title);
+        }
+        if (!get_post_meta($post_id, 'rank_math_description', true)) {
+            update_post_meta($post_id, 'rank_math_description', $excerpt);
+        }
+        if (!get_post_meta($post_id, 'rank_math_focus_keyword', true)) {
+            update_post_meta($post_id, 'rank_math_focus_keyword', $title);
+        }
+        update_post_meta($post_id, '_wrms_synced', 1);
+    }
+}
+
 // Ensure the function to check plugin is active is loaded
 if (!function_exists('is_plugin_active')) {
     include_once(ABSPATH . 'wp-admin/includes/plugin.php');
@@ -422,94 +471,6 @@ function wrms_modify_rankmath_canonical($canonical, $object = null)
     return $canonical;
 }
 
-// Add action to sync all products
-add_action('wp_ajax_wrms_sync_all_products', 'wrms_sync_all_products');
-function wrms_sync_all_products()
-{
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => 'Unauthorized access.'));
-        return;
-    }
-
-    check_ajax_referer('wrms_nonce', 'nonce');
-
-    $products = wc_get_products(array('status' => 'publish', 'limit' => -1));
-    $synced_count = 0;
-
-    foreach ($products as $product) {
-        wrms_maybe_sync_product($product->get_id(), null, true);
-        $synced_count++;
-    }
-
-    wp_send_json_success(array('message' => sprintf('%d products synced successfully.', $synced_count)));
-}
-
-// Add action to sync all categories
-add_action('wp_ajax_wrms_sync_all_categories', 'wrms_sync_all_categories');
-function wrms_sync_all_categories()
-{
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => 'Unauthorized access.'));
-        return;
-    }
-
-    check_ajax_referer('wrms_nonce', 'nonce');
-
-    $categories = get_terms(array('taxonomy' => 'product_cat', 'hide_empty' => false));
-    $synced_count = 0;
-
-    foreach ($categories as $category) {
-        wrms_maybe_sync_category($category->term_id, $category->term_taxonomy_id);
-        $synced_count++;
-    }
-
-    wp_send_json_success(array('message' => sprintf('%d categories synced successfully.', $synced_count)));
-}
-
-// Add action to sync all pages
-add_action('wp_ajax_wrms_sync_all_pages', 'wrms_sync_all_pages');
-function wrms_sync_all_pages()
-{
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => 'Unauthorized access.'));
-        return;
-    }
-
-    check_ajax_referer('wrms_nonce', 'nonce');
-
-    $pages = get_pages();
-    $synced_count = 0;
-
-    foreach ($pages as $page) {
-        wrms_maybe_sync_page($page->ID, $page, true);
-        $synced_count++;
-    }
-
-    wp_send_json_success(array('message' => sprintf('%d pages synced successfully.', $synced_count)));
-}
-
-// Add action to sync all media
-add_action('wp_ajax_wrms_sync_all_media', 'wrms_sync_all_media');
-function wrms_sync_all_media()
-{
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => 'Unauthorized access.'));
-        return;
-    }
-
-    check_ajax_referer('wrms_nonce', 'nonce');
-
-    $attachments = get_posts(array('post_type' => 'attachment', 'numberposts' => -1));
-    $synced_count = 0;
-
-    foreach ($attachments as $attachment) {
-        wrms_maybe_sync_media($attachment->ID);
-        $synced_count++;
-    }
-
-    wp_send_json_success(array('message' => sprintf('%d media items synced successfully.', $synced_count)));
-}
-
 // Activation hook
 register_activation_hook(__FILE__, 'wrms_activate');
 function wrms_activate()
@@ -540,5 +501,15 @@ function wrms_perform_daily_sync()
         wrms_sync_all_categories();
         wrms_sync_all_pages();
         wrms_sync_all_media();
+        wrms_sync_all_posts();
+    }
+}
+
+// Function to sync all posts
+function wrms_sync_all_posts()
+{
+    $posts = get_posts(array('post_type' => 'post', 'posts_per_page' => -1));
+    foreach ($posts as $post) {
+        wrms_maybe_sync_post($post->ID, $post, true);
     }
 }
