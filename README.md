@@ -1,4 +1,4 @@
-# WooCommerce RankMath Sync
+# WordPress RankMath Sync
 
 ## Description
 
