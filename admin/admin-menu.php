@@ -38,12 +38,12 @@ function wrms_admin_page()
         <h2>Sync or Remove RankMath Meta</h2>
         <div class="wrms-button-grid">
           <div class="wrms-button-group">
-            <h3>Products</h3>
+            <h3>WooCommerce Products</h3>
             <button id="sync-products" class="button button-primary">Sync Products</button>
             <button id="remove-product-meta" class="button button-secondary">Remove Product Meta</button>
           </div>
           <div class="wrms-button-group">
-            <h3>Categories</h3>
+            <h3>WooCommerce Categories</h3>
             <button id="sync-categories" class="button button-primary">Sync Categories</button>
             <button id="remove-category-meta" class="button button-secondary">Remove Category Meta</button>
           </div>
