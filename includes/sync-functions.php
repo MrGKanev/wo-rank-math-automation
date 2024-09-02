@@ -6,32 +6,28 @@ if (!defined('ABSPATH')) {
 
 // Hook to save product
 add_action('save_post_product', 'wrms_maybe_sync_product', 10, 3);
-function wrms_maybe_sync_product($post_id, $post, $update)
+function wrms_maybe_sync_product($post_id, $post = null, $update = false)
 {
   if (get_option('wrms_auto_sync', '0') !== '1') {
     return;
   }
 
-  if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
-    $product = wc_get_product($post_id);
-    if (!$product) return;
-
-    $title = $product->get_name();
-    $description = $product->get_description();
-    $short_description = $product->get_short_description();
-    $seo_description = $short_description ? $short_description : wp_trim_words($description, 30, '...');
-
-    if (!get_post_meta($post_id, 'rank_math_title', true)) {
-      update_post_meta($post_id, 'rank_math_title', $title);
-    }
-    if (!get_post_meta($post_id, 'rank_math_description', true)) {
-      update_post_meta($post_id, 'rank_math_description', $seo_description);
-    }
-    if (!get_post_meta($post_id, 'rank_math_focus_keyword', true)) {
-      update_post_meta($post_id, 'rank_math_focus_keyword', $title);
-    }
-    update_post_meta($post_id, '_wrms_synced', 1);
+  if (!is_plugin_active('seo-by-rank-math/rank-math.php')) {
+    return;
   }
+
+  $product = wc_get_product($post_id);
+  if (!$product) return;
+
+  $title = $product->get_name();
+  $description = $product->get_description();
+  $short_description = $product->get_short_description();
+  $seo_description = $short_description ? $short_description : wp_trim_words($description, 30, '...');
+
+  update_post_meta($post_id, 'rank_math_title', $title);
+  update_post_meta($post_id, 'rank_math_description', $seo_description);
+  update_post_meta($post_id, 'rank_math_focus_keyword', $title);
+  update_post_meta($post_id, '_wrms_synced', '1');
 }
 
 // Hook to save category

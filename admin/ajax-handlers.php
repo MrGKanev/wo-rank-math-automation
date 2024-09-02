@@ -42,37 +42,56 @@ function wrms_get_product_count_handler() {
 }
 
 // Handler for syncing next product
-add_action('wp_ajax_wrms_sync_next_product', 'wrms_sync_next_product_handler');
-function wrms_sync_next_product_handler() {
+function wrms_sync_next_product_handler()
+{
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
+
     $args = array(
         'post_type' => 'product',
         'posts_per_page' => 1,
         'meta_query' => array(
+            'relation' => 'OR',
             array(
                 'key' => '_wrms_synced',
                 'compare' => 'NOT EXISTS'
+            ),
+            array(
+                'key' => '_wrms_synced',
+                'value' => '0',
+                'compare' => '='
             )
-        )
+        ),
+        'fields' => 'ids'
     );
+
     $products = get_posts($args);
+
     if (!empty($products)) {
-        $product = $products[0];
-        wrms_maybe_sync_product($product->ID, $product, true);
-        wp_send_json_success(array(
-            'processed' => 1,
-            'product' => array(
-                'id' => $product->ID,
-                'title' => $product->post_title
-            )
-        ));
+        $product_id = $products[0];
+        $product = wc_get_product($product_id);
+
+        if ($product) {
+            wrms_maybe_sync_product($product_id, null, true);
+            update_post_meta($product_id, '_wrms_synced', '1');
+
+            wp_send_json_success(array(
+                'processed' => 1,
+                'product' => array(
+                    'id' => $product_id,
+                    'title' => $product->get_name()
+                )
+            ));
+        } else {
+            wp_send_json_error(array('message' => 'Failed to retrieve product.'));
+        }
     } else {
         wp_send_json_success(array('processed' => 0));
     }
 }
+add_action('wp_ajax_wrms_sync_next_product', 'wrms_sync_next_product_handler');
 
 // Handler for syncing categories
 add_action('wp_ajax_wrms_sync_categories', 'wrms_sync_categories_handler');
