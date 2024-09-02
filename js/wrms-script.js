@@ -121,9 +121,7 @@ jQuery(document).ready(function ($) {
         nonce: wrms_data.nonce,
       },
       success: function (response) {
-        if (response.success) {
-          alert("Auto-sync setting updated successfully.");
-        } else {
+        if (!response.success) {
           alert("Error updating auto-sync setting: " + response.data.message);
         }
       },
@@ -259,6 +257,7 @@ jQuery(document).ready(function ($) {
             $("#sync-status").append(
               "<p>Error processing product: " + response.data.message + "</p>"
             );
+            updateStats(); // Update statistics even if there's an error
           } else {
             $("#sync-loader").hide();
             $("#sync-status").append(
@@ -272,6 +271,7 @@ jQuery(document).ready(function ($) {
           $("#sync-status").append(
             "<p>An error occurred during syncing: " + error + "</p>"
           );
+          updateStats(); // Update statistics even if there's an error
         },
       });
     }
@@ -312,12 +312,14 @@ jQuery(document).ready(function ($) {
           );
         }
         $("#sync-loader").hide();
+        updateStats(); // Always update statistics
       },
       error: function (xhr, status, error) {
         $("#sync-loader").hide();
         $("#sync-status").append(
           "<p>An error occurred during category syncing: " + error + "</p>"
         );
+        updateStats(); // Update statistics even if there's an error
       },
     });
   }
@@ -357,12 +359,14 @@ jQuery(document).ready(function ($) {
           );
         }
         $("#sync-loader").hide();
+        updateStats(); // Always update statistics
       },
       error: function (xhr, status, error) {
         $("#sync-loader").hide();
         $("#sync-status").append(
           "<p>An error occurred during page syncing: " + error + "</p>"
         );
+        updateStats(); // Update statistics even if there's an error
       },
     });
   }
@@ -402,12 +406,14 @@ jQuery(document).ready(function ($) {
           );
         }
         $("#sync-loader").hide();
+        updateStats(); // Always update statistics
       },
       error: function (xhr, status, error) {
         $("#sync-loader").hide();
         $("#sync-status").append(
           "<p>An error occurred during media syncing: " + error + "</p>"
         );
+        updateStats(); // Update statistics even if there's an error
       },
     });
   }
@@ -447,12 +453,14 @@ jQuery(document).ready(function ($) {
           );
         }
         $("#sync-loader").hide();
+        updateStats(); // Always update statistics
       },
       error: function (xhr, status, error) {
         $("#sync-loader").hide();
         $("#sync-status").append(
           "<p>An error occurred during post syncing: " + error + "</p>"
         );
+        updateStats(); // Update statistics even if there's an error
       },
     });
   }
@@ -492,12 +500,14 @@ jQuery(document).ready(function ($) {
           );
         }
         $("#sync-loader").hide();
+        updateStats(); // Always update statistics
       },
       error: function (xhr, status, error) {
         $("#sync-loader").hide();
         $("#sync-status").append(
           "<p>An error occurred during product meta removal: " + error + "</p>"
         );
+        updateStats(); // Update statistics even if there's an error
       },
     });
   }
@@ -537,12 +547,14 @@ jQuery(document).ready(function ($) {
           );
         }
         $("#sync-loader").hide();
+        updateStats(); // Always update statistics
       },
       error: function (xhr, status, error) {
         $("#sync-loader").hide();
         $("#sync-status").append(
           "<p>An error occurred during category meta removal: " + error + "</p>"
         );
+        updateStats(); // Update statistics even if there's an error
       },
     });
   }
@@ -582,12 +594,14 @@ jQuery(document).ready(function ($) {
           );
         }
         $("#sync-loader").hide();
+        updateStats(); // Always update statistics
       },
       error: function (xhr, status, error) {
         $("#sync-loader").hide();
         $("#sync-status").append(
           "<p>An error occurred during page meta removal: " + error + "</p>"
         );
+        updateStats(); // Update statistics even if there's an error
       },
     });
   }
@@ -627,12 +641,14 @@ jQuery(document).ready(function ($) {
           );
         }
         $("#sync-loader").hide();
+        updateStats(); // Always update statistics
       },
       error: function (xhr, status, error) {
         $("#sync-loader").hide();
         $("#sync-status").append(
           "<p>An error occurred during media meta removal: " + error + "</p>"
         );
+        updateStats(); // Update statistics even if there's an error
       },
     });
   }
@@ -672,12 +688,14 @@ jQuery(document).ready(function ($) {
           );
         }
         $("#sync-loader").hide();
+        updateStats(); // Always update statistics
       },
       error: function (xhr, status, error) {
         $("#sync-loader").hide();
         $("#sync-status").append(
           "<p>An error occurred during post meta removal: " + error + "</p>"
         );
+        updateStats(); // Update statistics even if there's an error
       },
     });
   }

@@ -107,7 +107,7 @@ function wrms_admin_page()
           <?php settings_fields('wrms_options_group'); ?>
           <label for="wrms_auto_sync">
             <input type="checkbox" id="wrms_auto_sync" name="wrms_auto_sync" value="1" <?php checked($auto_sync, '1'); ?> />
-            Automatically sync product and category information to RankMath
+            Automatically sync all content (products, categories, pages, media, posts) to RankMath
           </label>
           <?php submit_button('Save Settings'); ?>
         </form>

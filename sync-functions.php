@@ -151,7 +151,7 @@ function wrms_sync_all_posts()
   }
 }
 
-// Add this function to sync all products
+// Function to sync all products
 function wrms_sync_all_products()
 {
   $products = get_posts(array('post_type' => 'product', 'posts_per_page' => -1));
@@ -160,7 +160,7 @@ function wrms_sync_all_products()
   }
 }
 
-// Add this function to sync all categories
+// Function to sync all categories
 function wrms_sync_all_categories()
 {
   $categories = get_terms(array('taxonomy' => 'product_cat', 'hide_empty' => false));
@@ -169,7 +169,7 @@ function wrms_sync_all_categories()
   }
 }
 
-// Add this function to sync all pages
+// Function to sync all pages
 function wrms_sync_all_pages()
 {
   $pages = get_posts(array('post_type' => 'page', 'posts_per_page' => -1));
@@ -178,7 +178,7 @@ function wrms_sync_all_pages()
   }
 }
 
-// Add this function to sync all media
+// Function to sync all media
 function wrms_sync_all_media()
 {
   $attachments = get_posts(array('post_type' => 'attachment', 'posts_per_page' => -1));
