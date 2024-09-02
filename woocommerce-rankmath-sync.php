@@ -3,7 +3,7 @@
  * Plugin Name:             WooCommerce RankMath Sync
  * Plugin URI:              https://github.com/MrGKanev/wo-rank-math-automation/
  * Description:             Copies WooCommerce product, category, WordPress post, page, and media information to RankMath's meta information.
- * Version:                 0.0.4
+ * Version:                 0.0.5
  * Author:                  Gabriel Kanev
  * Author URI:              https://gkanev.com
  * License:                 GPL-2.0 License
@@ -18,15 +18,18 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Define plugin constants
+define('WRMS_VERSION', '0.0.5');
+define('WRMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('WRMS_PLUGIN_URL', plugin_dir_url(__FILE__));
+
 // Include other plugin files
-require_once plugin_dir_path(__FILE__) . 'admin-menu.php';
-require_once plugin_dir_path(__FILE__) . 'sync-functions.php';
-require_once plugin_dir_path(__FILE__) . 'ajax-handlers.php';
-require_once plugin_dir_path(__FILE__) . 'helpers.php';
-require_once plugin_dir_path(__FILE__) . 'settings.php';
-require_once plugin_dir_path(__FILE__) . 'rank-math-filters.php';
-require_once plugin_dir_path(__FILE__) . 'cron-jobs.php';
-require_once plugin_dir_path(__FILE__) . 'url-functions.php';
+require_once WRMS_PLUGIN_DIR . 'admin/admin-menu.php';
+require_once WRMS_PLUGIN_DIR . 'includes/sync-functions.php';
+require_once WRMS_PLUGIN_DIR . 'admin/settings.php';
+require_once WRMS_PLUGIN_DIR . 'public/rank-math-filters.php';
+require_once WRMS_PLUGIN_DIR . 'includes/helpers.php';
+require_once WRMS_PLUGIN_DIR . 'includes/url-functions.php';
 
 // Activation hook
 register_activation_hook(__FILE__, 'wrms_activate');
@@ -56,3 +59,21 @@ add_action('wrms_daily_sync', 'wrms_perform_daily_sync');
 if (!function_exists('is_plugin_active')) {
     include_once(ABSPATH . 'wp-admin/includes/plugin.php');
 }
+
+// Include AJAX handlers
+require_once WRMS_PLUGIN_DIR . 'admin/ajax-handlers.php';
+
+// Enqueue admin scripts and styles
+function wrms_enqueue_admin_scripts($hook)
+{
+    if ($hook != 'tools_page_woocommerce-rankmath-sync') {
+        return;
+    }
+    wp_enqueue_script('wrms-script', WRMS_PLUGIN_URL . 'admin/js/wrms-script.js', array('jquery'), WRMS_VERSION, true);
+    wp_enqueue_style('wrms-style', WRMS_PLUGIN_URL . 'assets/css/wrms-style.css', array(), WRMS_VERSION);
+    wp_localize_script('wrms-script', 'wrms_data', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('wrms_nonce')
+    ));
+}
+add_action('admin_enqueue_scripts', 'wrms_enqueue_admin_scripts');

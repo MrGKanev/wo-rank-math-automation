@@ -158,7 +158,9 @@ jQuery(document).ready(function ($) {
           $("#total-items").text(stats.total_items);
           $("#total-synced").text(stats.total_synced);
           $("#sync-percentage").text(stats.sync_percentage + "%");
-          $("#last-updated").text(stats.last_updated);
+          $("#last-updated").text(
+            new Date(stats.timestamp * 1000).toLocaleString()
+          );
         } else {
           alert("Failed to update statistics. Please try again.");
         }

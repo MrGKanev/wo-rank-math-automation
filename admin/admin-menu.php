@@ -137,18 +137,3 @@ function wrms_admin_page()
   </div>
 <?php
 }
-
-// Enqueue scripts and styles
-add_action('admin_enqueue_scripts', 'wrms_enqueue_scripts');
-function wrms_enqueue_scripts($hook)
-{
-  if ($hook != 'tools_page_woocommerce-rankmath-sync') {
-    return;
-  }
-  wp_enqueue_script('wrms-script', plugin_dir_url(__FILE__) . 'js/wrms-script.js', array('jquery'), null, true);
-  wp_enqueue_style('wrms-style', plugin_dir_url(__FILE__) . 'css/wrms-style.css');
-  wp_localize_script('wrms-script', 'wrms_data', array(
-    'ajax_url' => admin_url('admin-ajax.php'),
-    'nonce' => wp_create_nonce('wrms_nonce')
-  ));
-}

@@ -6,7 +6,8 @@ if (!defined('ABSPATH')) {
 
 // Handler for updating auto sync setting
 add_action('wp_ajax_wrms_update_auto_sync', 'wrms_update_auto_sync_handler');
-function wrms_update_auto_sync_handler() {
+function wrms_update_auto_sync_handler()
+{
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
@@ -18,12 +19,14 @@ function wrms_update_auto_sync_handler() {
 
 // Handler for updating statistics
 add_action('wp_ajax_wrms_update_stats', 'wrms_update_stats_handler');
-function wrms_update_stats_handler() {
+function wrms_update_stats_handler()
+{
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
     $stats = wrms_calculate_and_cache_stats();
+    $stats['timestamp'] = time();
     wp_send_json_success($stats);
 }
 
