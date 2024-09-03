@@ -131,49 +131,49 @@ jQuery(document).ready(function ($) {
     });
   }
 
-  function updateStats() {
-    var button = $("#update-stats");
-    button.prop("disabled", true).text("Updating...");
+function updateStats() {
+  var button = $("#update-stats");
+  button.prop("disabled", true).text("Updating...");
 
-    $.ajax({
-      url: wrms_data.ajax_url,
-      type: "POST",
-      data: {
-        action: "wrms_update_stats",
-        nonce: wrms_data.nonce,
-      },
-      success: function (response) {
-        if (response.success) {
-          var stats = response.data;
-          $("#total-products").text(stats.total_products);
-          $("#synced-products").text(stats.synced_products);
-          $("#total-pages").text(stats.total_pages);
-          $("#synced-pages").text(stats.synced_pages);
-          $("#total-media").text(stats.total_media);
-          $("#synced-media").text(stats.synced_media);
-          $("#total-categories").text(stats.total_categories);
-          $("#synced-categories").text(stats.synced_categories);
-          $("#total-posts").text(stats.total_posts);
-          $("#synced-posts").text(stats.synced_posts);
-          $("#total-items").text(stats.total_items);
-          $("#total-synced").text(stats.total_synced);
-          $("#sync-percentage").text(stats.sync_percentage + "%");
-          $("#last-updated").text(
-            new Date(stats.timestamp * 1000).toLocaleString()
-          );
-        } else {
-          alert("Failed to update statistics. Please try again.");
-        }
-      },
-      error: function (xhr, status, error) {
-        alert("An error occurred. Please try again. Error: " + error);
-        console.log(xhr.responseText);
-      },
-      complete: function () {
-        button.prop("disabled", false).text("Update Statistics");
-      },
-    });
-  }
+  $.ajax({
+    url: wrms_data.ajax_url,
+    type: "POST",
+    data: {
+      action: "wrms_update_stats",
+      nonce: wrms_data.nonce,
+    },
+    success: function (response) {
+      if (response.success) {
+        var stats = response.data;
+        $("#total-products").text(stats.total_products);
+        $("#synced-products").text(stats.synced_products);
+        $("#total-pages").text(stats.total_pages);
+        $("#synced-pages").text(stats.synced_pages);
+        $("#total-media").text(stats.total_media);
+        $("#synced-media").text(stats.synced_media);
+        $("#total-categories").text(stats.total_categories);
+        $("#synced-categories").text(stats.synced_categories);
+        $("#total-posts").text(stats.total_posts);
+        $("#synced-posts").text(stats.synced_posts);
+        $("#total-items").text(stats.total_items);
+        $("#total-synced").text(stats.total_synced);
+        $("#sync-percentage").text(stats.sync_percentage + "%");
+        $("#last-updated").text(
+          new Date(stats.timestamp * 1000).toLocaleString()
+        );
+      } else {
+        alert("Failed to update statistics. Please try again.");
+      }
+    },
+    error: function (xhr, status, error) {
+      alert("An error occurred. Please try again. Error: " + error);
+      console.log(xhr.responseText);
+    },
+    complete: function () {
+      button.prop("disabled", false).text("Update Statistics");
+    },
+  });
+}
 
   function syncProducts() {
     var totalProducts = 0;

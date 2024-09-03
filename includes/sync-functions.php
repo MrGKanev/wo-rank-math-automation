@@ -125,15 +125,9 @@ function wrms_maybe_sync_post($post_id, $post, $update)
     $content = get_post_field('post_content', $post_id);
     $excerpt = has_excerpt($post_id) ? get_the_excerpt($post_id) : wp_trim_words($content, 30, '...');
 
-    if (!get_post_meta($post_id, 'rank_math_title', true)) {
-      update_post_meta($post_id, 'rank_math_title', $title);
-    }
-    if (!get_post_meta($post_id, 'rank_math_description', true)) {
-      update_post_meta($post_id, 'rank_math_description', $excerpt);
-    }
-    if (!get_post_meta($post_id, 'rank_math_focus_keyword', true)) {
-      update_post_meta($post_id, 'rank_math_focus_keyword', $title);
-    }
+    update_post_meta($post_id, 'rank_math_title', $title);
+    update_post_meta($post_id, 'rank_math_description', $excerpt);
+    update_post_meta($post_id, 'rank_math_focus_keyword', $title);
     update_post_meta($post_id, '_wrms_synced', 1);
   }
 }

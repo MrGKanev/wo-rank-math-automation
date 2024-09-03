@@ -106,7 +106,8 @@ function wrms_get_category_count_handler() {
 
 // Handler for syncing next category
 add_action('wp_ajax_wrms_sync_next_category', 'wrms_sync_next_category_handler');
-function wrms_sync_next_category_handler() {
+function wrms_sync_next_category_handler()
+{
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
@@ -145,7 +146,7 @@ function wrms_sync_next_category_handler() {
             )
         ));
     } else {
-        wp_send_json_success(array('processed' => 0));
+        wp_send_json_success(array('processed' => 0, 'message' => 'All categories have been synced.'));
     }
 }
 
