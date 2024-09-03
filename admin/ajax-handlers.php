@@ -42,6 +42,7 @@ function wrms_get_product_count_handler() {
 }
 
 // Handler for syncing next product
+add_action('wp_ajax_wrms_sync_next_product', 'wrms_sync_next_product_handler');
 function wrms_sync_next_product_handler()
 {
     check_ajax_referer('wrms_nonce', 'nonce');
@@ -91,115 +92,227 @@ function wrms_sync_next_product_handler()
         wp_send_json_success(array('processed' => 0));
     }
 }
-add_action('wp_ajax_wrms_sync_next_product', 'wrms_sync_next_product_handler');
 
-// Handler for syncing categories
-add_action('wp_ajax_wrms_sync_categories', 'wrms_sync_categories_handler');
-function wrms_sync_categories_handler() {
+// Handler for getting category count
+add_action('wp_ajax_wrms_get_category_count', 'wrms_get_category_count_handler');
+function wrms_get_category_count_handler() {
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
-    $categories = get_terms(array('taxonomy' => 'product_cat', 'hide_empty' => false));
-    $total = count($categories);
-    $synced = 0;
-    foreach ($categories as $category) {
+    $count = wp_count_terms('product_cat');
+    wp_send_json_success(array('count' => $count));
+}
+
+// Handler for syncing next category
+add_action('wp_ajax_wrms_sync_next_category', 'wrms_sync_next_category_handler');
+function wrms_sync_next_category_handler() {
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
+
+    $args = array(
+        'taxonomy' => 'product_cat',
+        'hide_empty' => false,
+        'number' => 1,
+        'meta_query' => array(
+            'relation' => 'OR',
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'NOT EXISTS'
+            ),
+            array(
+                'key' => '_wrms_synced',
+                'value' => '0',
+                'compare' => '='
+            )
+        )
+    );
+
+    $categories = get_terms($args);
+
+    if (!empty($categories)) {
+        $category = $categories[0];
         wrms_maybe_sync_category($category->term_id, $category->term_taxonomy_id);
-        $synced++;
+        update_term_meta($category->term_id, '_wrms_synced', '1');
+
         wp_send_json_success(array(
             'processed' => 1,
             'category' => array(
                 'id' => $category->term_id,
                 'name' => $category->name
-            ),
-            'total' => $total,
-            'synced' => $synced
+            )
         ));
+    } else {
+        wp_send_json_success(array('processed' => 0));
     }
-    wp_send_json_success(array('total' => $total, 'synced' => $synced));
 }
 
-// Handler for syncing pages
-add_action('wp_ajax_wrms_sync_pages', 'wrms_sync_pages_handler');
-function wrms_sync_pages_handler() {
+// Handler for getting page count
+add_action('wp_ajax_wrms_get_page_count', 'wrms_get_page_count_handler');
+function wrms_get_page_count_handler() {
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
-    $pages = get_posts(array('post_type' => 'page', 'posts_per_page' => -1));
-    $total = count($pages);
-    $synced = 0;
-    foreach ($pages as $page) {
+    $count = wp_count_posts('page')->publish;
+    wp_send_json_success(array('count' => $count));
+}
+
+// Handler for syncing next page
+add_action('wp_ajax_wrms_sync_next_page', 'wrms_sync_next_page_handler');
+function wrms_sync_next_page_handler() {
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
+
+    $args = array(
+        'post_type' => 'page',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            'relation' => 'OR',
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'NOT EXISTS'
+            ),
+            array(
+                'key' => '_wrms_synced',
+                'value' => '0',
+                'compare' => '='
+            )
+        )
+    );
+
+    $pages = get_posts($args);
+
+    if (!empty($pages)) {
+        $page = $pages[0];
         wrms_maybe_sync_page($page->ID, $page, true);
-        $synced++;
+        update_post_meta($page->ID, '_wrms_synced', '1');
+
         wp_send_json_success(array(
             'processed' => 1,
             'page' => array(
                 'id' => $page->ID,
                 'title' => $page->post_title
-            ),
-            'total' => $total,
-            'synced' => $synced
+            )
         ));
+    } else {
+        wp_send_json_success(array('processed' => 0));
     }
-    wp_send_json_success(array('total' => $total, 'synced' => $synced));
 }
 
-// Handler for syncing media
-add_action('wp_ajax_wrms_sync_media', 'wrms_sync_media_handler');
-function wrms_sync_media_handler() {
+// Handler for getting media count
+add_action('wp_ajax_wrms_get_media_count', 'wrms_get_media_count_handler');
+function wrms_get_media_count_handler() {
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
+    $count = wp_count_posts('attachment')->inherit;
+    wp_send_json_success(array('count' => $count));
+}
+
+// Handler for syncing next media item
+add_action('wp_ajax_wrms_sync_next_media', 'wrms_sync_next_media_handler');
+function wrms_sync_next_media_handler() {
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
+
     $args = array(
         'post_type' => 'attachment',
-        'posts_per_page' => -1,
-        'post_status' => 'inherit'
+        'post_status' => 'inherit',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            'relation' => 'OR',
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'NOT EXISTS'
+            ),
+            array(
+                'key' => '_wrms_synced',
+                'value' => '0',
+                'compare' => '='
+            )
+        )
     );
-    $attachments = get_posts($args);
-    $total = count($attachments);
-    $synced = 0;
-    foreach ($attachments as $attachment) {
-        wrms_maybe_sync_media($attachment->ID);
-        $synced++;
+
+    $media_items = get_posts($args);
+
+    if (!empty($media_items)) {
+        $media = $media_items[0];
+        wrms_maybe_sync_media($media->ID);
+        update_post_meta($media->ID, '_wrms_synced', '1');
+
         wp_send_json_success(array(
             'processed' => 1,
             'media' => array(
-                'id' => $attachment->ID,
-                'title' => $attachment->post_title
-            ),
-            'total' => $total,
-            'synced' => $synced
+                'id' => $media->ID,
+                'title' => $media->post_title
+            )
         ));
+    } else {
+        wp_send_json_success(array('processed' => 0));
     }
-    wp_send_json_success(array('total' => $total, 'synced' => $synced));
 }
 
-// Handler for syncing posts
-add_action('wp_ajax_wrms_sync_posts', 'wrms_sync_posts_handler');
-function wrms_sync_posts_handler() {
+// Handler for getting post count
+add_action('wp_ajax_wrms_get_post_count', 'wrms_get_post_count_handler');
+function wrms_get_post_count_handler() {
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
-    $posts = get_posts(array('post_type' => 'post', 'posts_per_page' => -1));
-    $total = count($posts);
-    $synced = 0;
-    foreach ($posts as $post) {
+    $count = wp_count_posts('post')->publish;
+    wp_send_json_success(array('count' => $count));
+}
+
+// Handler for syncing next post
+add_action('wp_ajax_wrms_sync_next_post', 'wrms_sync_next_post_handler');
+function wrms_sync_next_post_handler() {
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
+
+    $args = array(
+        'post_type' => 'post',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            'relation' => 'OR',
+            array(
+                'key' => '_wrms_synced',
+                'compare' => 'NOT EXISTS'
+            ),
+            array(
+                'key' => '_wrms_synced',
+                'value' => '0',
+                'compare' => '='
+            )
+        )
+    );
+
+    $posts = get_posts($args);
+
+    if (!empty($posts)) {
+        $post = $posts[0];
         wrms_maybe_sync_post($post->ID, $post, true);
-        $synced++;
+        update_post_meta($post->ID, '_wrms_synced', '1');
+
         wp_send_json_success(array(
             'processed' => 1,
             'post' => array(
                 'id' => $post->ID,
                 'title' => $post->post_title
-            ),
-            'total' => $total,
-            'synced' => $synced
+            )
         ));
+    } else {
+        wp_send_json_success(array('processed' => 0));
     }
-    wp_send_json_success(array('total' => $total, 'synced' => $synced));
 }
 
 // Handler for removing product meta
@@ -263,7 +376,8 @@ function wrms_remove_category_meta_handler() {
 
 // Handler for removing page meta
 add_action('wp_ajax_wrms_remove_page_meta', 'wrms_remove_page_meta_handler');
-function wrms_remove_page_meta_handler() {
+function wrms_remove_page_meta_handler()
+{
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
@@ -293,7 +407,8 @@ function wrms_remove_page_meta_handler() {
 
 // Handler for removing media meta
 add_action('wp_ajax_wrms_remove_media_meta', 'wrms_remove_media_meta_handler');
-function wrms_remove_media_meta_handler() {
+function wrms_remove_media_meta_handler()
+{
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
