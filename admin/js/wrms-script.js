@@ -1067,32 +1067,26 @@ jQuery(document).ready(function ($) {
   });
 
   // Function to get last sync time
-  function getLastSyncTime() {
-    $.ajax({
-      url: wrms_data.ajax_url,
-      method: "POST",
-      data: {
-        action: "wrms_get_last_sync_time",
-        nonce: wrms_data.nonce,
-      },
-      success: function (response) {
-        if (response.success) {
-          $("#last-sync-time").text(
-            "Last sync: " + response.data.last_sync_time
-          );
-        } else {
-          console.error(
-            "Error getting last sync time: " + response.data.message
-          );
-        }
-      },
-      error: function (xhr, status, error) {
-        console.error(
-          "An error occurred while getting last sync time: " + error
-        );
-      },
-    });
-  }
+function getLastSyncTime() {
+  $.ajax({
+    url: wrms_data.ajax_url,
+    method: "POST",
+    data: {
+      action: "wrms_get_last_sync_time",
+      nonce: wrms_data.nonce,
+    },
+    success: function (response) {
+      if (response.success) {
+        $("#last-sync-time").text("Last sync: " + response.data.last_sync_time);
+      } else {
+        console.error("Error getting last sync time: " + response.data.message);
+      }
+    },
+    error: function (xhr, status, error) {
+      console.error("An error occurred while getting last sync time: " + error);
+    },
+  });
+}
 
   // Call getLastSyncTime when the page loads
   getLastSyncTime();

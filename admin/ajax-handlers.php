@@ -569,7 +569,6 @@ function wrms_get_last_sync_time_handler()
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
-
     $last_sync_time = wrms_get_last_sync_time();
     wp_send_json_success(array('last_sync_time' => $last_sync_time));
 }
