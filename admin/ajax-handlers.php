@@ -113,22 +113,15 @@ function wrms_sync_next_category_handler()
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
 
+    $processed_categories = get_option('wrms_processed_categories', array());
+
     $args = array(
         'taxonomy' => 'product_cat',
         'hide_empty' => false,
         'number' => 1,
-        'meta_query' => array(
-            'relation' => 'OR',
-            array(
-                'key' => '_wrms_synced',
-                'compare' => 'NOT EXISTS'
-            ),
-            array(
-                'key' => '_wrms_synced',
-                'value' => '0',
-                'compare' => '='
-            )
-        )
+        'exclude' => $processed_categories,
+        'orderby' => 'id',
+        'order' => 'ASC'
     );
 
     $categories = get_terms($args);
@@ -136,7 +129,9 @@ function wrms_sync_next_category_handler()
     if (!empty($categories)) {
         $category = $categories[0];
         wrms_maybe_sync_category($category->term_id, $category->term_taxonomy_id);
-        update_term_meta($category->term_id, '_wrms_synced', '1');
+
+        $processed_categories[] = $category->term_id;
+        update_option('wrms_processed_categories', $processed_categories);
 
         wp_send_json_success(array(
             'processed' => 1,
@@ -146,6 +141,7 @@ function wrms_sync_next_category_handler()
             )
         ));
     } else {
+        delete_option('wrms_processed_categories');
         wp_send_json_success(array('processed' => 0, 'message' => 'All categories have been synced.'));
     }
 }

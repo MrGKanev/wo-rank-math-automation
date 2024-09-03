@@ -20,7 +20,8 @@ function wrms_calculate_and_cache_stats()
     'meta_query' => array(
       array(
         'key' => '_wrms_synced',
-        'compare' => 'EXISTS'
+        'value' => '1',
+        'compare' => '='
       )
     )
   )));
@@ -32,7 +33,8 @@ function wrms_calculate_and_cache_stats()
     'meta_query' => array(
       array(
         'key' => '_wrms_synced',
-        'compare' => 'EXISTS'
+        'value' => '1',
+        'compare' => '='
       )
     )
   )));
@@ -44,7 +46,8 @@ function wrms_calculate_and_cache_stats()
     'meta_query' => array(
       array(
         'key' => '_wrms_synced',
-        'compare' => 'EXISTS'
+        'value' => '1',
+        'compare' => '='
       )
     )
   )));
@@ -56,7 +59,8 @@ function wrms_calculate_and_cache_stats()
     'meta_query' => array(
       array(
         'key' => '_wrms_synced',
-        'compare' => 'EXISTS'
+        'value' => '1',
+        'compare' => '='
       )
     )
   )));
@@ -68,7 +72,8 @@ function wrms_calculate_and_cache_stats()
     'meta_query' => array(
       array(
         'key' => '_wrms_synced',
-        'compare' => 'EXISTS'
+        'value' => '1',
+        'compare' => '='
       )
     )
   )));
@@ -99,7 +104,6 @@ function wrms_calculate_and_cache_stats()
 
   return $stats;
 }
-
 // Function to get cached stats or calculate if not available
 function wrms_get_stats()
 {

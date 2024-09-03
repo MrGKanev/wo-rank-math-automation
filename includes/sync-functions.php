@@ -46,18 +46,13 @@ function wrms_maybe_sync_category($term_id, $tt_id)
     $description = $term->description;
     $seo_description = wp_trim_words($description, 30, '...');
 
-    if (!get_term_meta($term_id, 'rank_math_title', true)) {
-      update_term_meta($term_id, 'rank_math_title', $title);
-    }
-    if (!get_term_meta($term_id, 'rank_math_description', true)) {
-      update_term_meta($term_id, 'rank_math_description', $seo_description);
-    }
-    if (!get_term_meta($term_id, 'rank_math_focus_keyword', true)) {
-      update_term_meta($term_id, 'rank_math_focus_keyword', $title);
-    }
-    update_term_meta($term_id, '_wrms_synced', 1);
+    update_term_meta($term_id, 'rank_math_title', $title);
+    update_term_meta($term_id, 'rank_math_description', $seo_description);
+    update_term_meta($term_id, 'rank_math_focus_keyword', $title);
+    update_term_meta($term_id, '_wrms_synced', '1');
   }
 }
+
 
 // Hook to save page
 add_action('save_post_page', 'wrms_maybe_sync_page', 10, 3);

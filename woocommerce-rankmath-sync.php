@@ -64,6 +64,11 @@ if (!function_exists('is_plugin_active')) {
 // Include AJAX handlers
 require_once WRMS_PLUGIN_DIR . 'admin/ajax-handlers.php';
 
+function wrms_reset_category_sync()
+{
+    delete_option('wrms_processed_categories');
+}
+
 // Enqueue admin scripts and styles
 function wrms_enqueue_admin_scripts($hook)
 {
