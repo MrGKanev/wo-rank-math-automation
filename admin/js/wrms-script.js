@@ -300,14 +300,26 @@ jQuery(document).ready(function ($) {
               response.data.total +
               " categories"
           );
-          $("#sync-log").append("<p>Categories synced successfully!</p>");
+          $("#sync-log").append(
+            "<p>Processed category: " +
+              response.data.category.name +
+              " (ID: " +
+              response.data.category.id +
+              ")</p>"
+          );
           $("#sync-log").scrollTop($("#sync-log")[0].scrollHeight);
 
           // Update progress bar
           var progress = (response.data.synced / response.data.total) * 100;
           $("#progress-bar-fill").css("width", progress + "%");
 
-          updateStats(); // Update statistics after successful sync
+          if (response.data.synced < response.data.total) {
+            syncCategories();
+          } else {
+            $("#sync-loader").hide();
+            $("#sync-status").append("<p>Categories synced successfully!</p>");
+            updateStats(); // Update statistics after successful sync
+          }
         } else {
           $("#sync-status").append(
             "<p>Error syncing categories: " + response.data.message + "</p>"
@@ -347,14 +359,26 @@ jQuery(document).ready(function ($) {
               response.data.total +
               " pages"
           );
-          $("#sync-log").append("<p>Pages synced successfully!</p>");
+          $("#sync-log").append(
+            "<p>Processed page: " +
+              response.data.page.title +
+              " (ID: " +
+              response.data.page.id +
+              ")</p>"
+          );
           $("#sync-log").scrollTop($("#sync-log")[0].scrollHeight);
 
           // Update progress bar
           var progress = (response.data.synced / response.data.total) * 100;
           $("#progress-bar-fill").css("width", progress + "%");
 
-          updateStats(); // Update statistics after successful sync
+          if (response.data.synced < response.data.total) {
+            syncPages();
+          } else {
+            $("#sync-loader").hide();
+            $("#sync-status").append("<p>Pages synced successfully!</p>");
+            updateStats(); // Update statistics after successful sync
+          }
         } else {
           $("#sync-status").append(
             "<p>Error syncing pages: " + response.data.message + "</p>"
@@ -394,14 +418,26 @@ jQuery(document).ready(function ($) {
               response.data.total +
               " media items"
           );
-          $("#sync-log").append("<p>Media items synced successfully!</p>");
+          $("#sync-log").append(
+            "<p>Processed media: " +
+              response.data.media.title +
+              " (ID: " +
+              response.data.media.id +
+              ")</p>"
+          );
           $("#sync-log").scrollTop($("#sync-log")[0].scrollHeight);
 
           // Update progress bar
           var progress = (response.data.synced / response.data.total) * 100;
           $("#progress-bar-fill").css("width", progress + "%");
 
-          updateStats(); // Update statistics after successful sync
+          if (response.data.synced < response.data.total) {
+            syncMedia();
+          } else {
+            $("#sync-loader").hide();
+            $("#sync-status").append("<p>Media items synced successfully!</p>");
+            updateStats(); // Update statistics after successful sync
+          }
         } else {
           $("#sync-status").append(
             "<p>Error syncing media: " + response.data.message + "</p>"
@@ -441,14 +477,26 @@ jQuery(document).ready(function ($) {
               response.data.total +
               " posts"
           );
-          $("#sync-log").append("<p>Posts synced successfully!</p>");
+          $("#sync-log").append(
+            "<p>Processed post: " +
+              response.data.post.title +
+              " (ID: " +
+              response.data.post.id +
+              ")</p>"
+          );
           $("#sync-log").scrollTop($("#sync-log")[0].scrollHeight);
 
           // Update progress bar
           var progress = (response.data.synced / response.data.total) * 100;
           $("#progress-bar-fill").css("width", progress + "%");
 
-          updateStats(); // Update statistics after successful sync
+          if (response.data.synced < response.data.total) {
+            syncPosts();
+          } else {
+            $("#sync-loader").hide();
+            $("#sync-status").append("<p>Posts synced successfully!</p>");
+            updateStats(); // Update statistics after successful sync
+          }
         } else {
           $("#sync-status").append(
             "<p>Error syncing posts: " + response.data.message + "</p>"

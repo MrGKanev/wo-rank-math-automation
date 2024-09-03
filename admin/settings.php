@@ -114,7 +114,7 @@ function wrms_settings_init()
 
 function wrms_settings_section_callback()
 {
-  echo __('Configure general settings for WooCommerce RankMath Sync', 'woocommerce-rankmath-sync');
+  echo __('Configure general settings for WordPress RankMath Sync', 'woocommerce-rankmath-sync');
 }
 
 function wrms_auto_sync_render()

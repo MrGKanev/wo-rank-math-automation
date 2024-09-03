@@ -10,7 +10,7 @@ function wrms_add_admin_menu()
 {
   add_submenu_page(
     'tools.php',
-    'WooCommerce RankMath Sync',
+    'WordPress RankMath Sync',
     'RankMath Sync',
     'manage_options',
     'woocommerce-rankmath-sync',
@@ -25,7 +25,7 @@ function wrms_admin_page()
   $stats = wrms_get_stats();
 ?>
   <div class="wrap wrms-admin-page">
-    <h1>WooCommerce RankMath Sync</h1>
+    <h1>WordPress RankMath Sync</h1>
 
     <div class="wrms-tabs">
       <button class="wrms-tab-link active" data-tab="sync">Sync</button>

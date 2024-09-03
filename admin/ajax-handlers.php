@@ -106,6 +106,15 @@ function wrms_sync_categories_handler() {
     foreach ($categories as $category) {
         wrms_maybe_sync_category($category->term_id, $category->term_taxonomy_id);
         $synced++;
+        wp_send_json_success(array(
+            'processed' => 1,
+            'category' => array(
+                'id' => $category->term_id,
+                'name' => $category->name
+            ),
+            'total' => $total,
+            'synced' => $synced
+        ));
     }
     wp_send_json_success(array('total' => $total, 'synced' => $synced));
 }
@@ -117,12 +126,21 @@ function wrms_sync_pages_handler() {
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
-    $pages = get_pages();
+    $pages = get_posts(array('post_type' => 'page', 'posts_per_page' => -1));
     $total = count($pages);
     $synced = 0;
     foreach ($pages as $page) {
         wrms_maybe_sync_page($page->ID, $page, true);
         $synced++;
+        wp_send_json_success(array(
+            'processed' => 1,
+            'page' => array(
+                'id' => $page->ID,
+                'title' => $page->post_title
+            ),
+            'total' => $total,
+            'synced' => $synced
+        ));
     }
     wp_send_json_success(array('total' => $total, 'synced' => $synced));
 }
@@ -145,6 +163,15 @@ function wrms_sync_media_handler() {
     foreach ($attachments as $attachment) {
         wrms_maybe_sync_media($attachment->ID);
         $synced++;
+        wp_send_json_success(array(
+            'processed' => 1,
+            'media' => array(
+                'id' => $attachment->ID,
+                'title' => $attachment->post_title
+            ),
+            'total' => $total,
+            'synced' => $synced
+        ));
     }
     wp_send_json_success(array('total' => $total, 'synced' => $synced));
 }
@@ -162,6 +189,15 @@ function wrms_sync_posts_handler() {
     foreach ($posts as $post) {
         wrms_maybe_sync_post($post->ID, $post, true);
         $synced++;
+        wp_send_json_success(array(
+            'processed' => 1,
+            'post' => array(
+                'id' => $post->ID,
+                'title' => $post->post_title
+            ),
+            'total' => $total,
+            'synced' => $synced
+        ));
     }
     wp_send_json_success(array('total' => $total, 'synced' => $synced));
 }
@@ -288,7 +324,8 @@ function wrms_remove_media_meta_handler() {
 
 // Handler for removing post meta
 add_action('wp_ajax_wrms_remove_post_meta', 'wrms_remove_post_meta_handler');
-function wrms_remove_post_meta_handler() {
+function wrms_remove_post_meta_handler()
+{
     check_ajax_referer('wrms_nonce', 'nonce');
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
@@ -320,174 +357,174 @@ function wrms_remove_post_meta_handler() {
 add_action('wp_ajax_wrms_get_urls', 'wrms_get_urls_handler');
 function wrms_get_urls_handler()
 {
-  check_ajax_referer('wrms_nonce', 'nonce');
-  if (!current_user_can('manage_options')) {
-    wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
-  }
-
-  $offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
-  $chunk_size = isset($_POST['chunk_size']) ? intval($_POST['chunk_size']) : 100;
-  $url_types = isset($_POST['url_types']) ? (array)$_POST['url_types'] : array();
-
-  $urls = array();
-  $total = 0;
-
-  foreach ($url_types as $type) {
-    switch ($type) {
-      case 'product':
-        $result = wrms_get_product_urls($offset, $chunk_size);
-        $urls = array_merge($urls, $result['urls']);
-        $total += $result['total'];
-        break;
-      case 'page':
-        $result = wrms_get_page_urls($offset, $chunk_size);
-        $urls = array_merge($urls, $result['urls']);
-        $total += $result['total'];
-        break;
-      case 'category':
-        $result = wrms_get_category_urls($offset, $chunk_size);
-        $urls = array_merge($urls, $result['urls']);
-        $total += $result['total'];
-        break;
-      case 'tag':
-        $result = wrms_get_tag_urls($offset, $chunk_size);
-        $urls = array_merge($urls, $result['urls']);
-        $total += $result['total'];
-        break;
-      case 'post':
-        $result = wrms_get_post_urls($offset, $chunk_size);
-        $urls = array_merge($urls, $result['urls']);
-        $total += $result['total'];
-        break;
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
     }
-  }
 
-  wp_send_json_success(array('urls' => $urls, 'total' => $total));
+    $offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+    $chunk_size = isset($_POST['chunk_size']) ? intval($_POST['chunk_size']) : 100;
+    $url_types = isset($_POST['url_types']) ? (array)$_POST['url_types'] : array();
+
+    $urls = array();
+    $total = 0;
+
+    foreach ($url_types as $type) {
+        switch ($type) {
+            case 'product':
+                $result = wrms_get_product_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $result['urls']);
+                $total += $result['total'];
+                break;
+            case 'page':
+                $result = wrms_get_page_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $result['urls']);
+                $total += $result['total'];
+                break;
+            case 'category':
+                $result = wrms_get_category_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $result['urls']);
+                $total += $result['total'];
+                break;
+            case 'tag':
+                $result = wrms_get_tag_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $result['urls']);
+                $total += $result['total'];
+                break;
+            case 'post':
+                $result = wrms_get_post_urls($offset, $chunk_size);
+                $urls = array_merge($urls, $result['urls']);
+                $total += $result['total'];
+                break;
+        }
+    }
+
+    wp_send_json_success(array('urls' => $urls, 'total' => $total));
 }
 
 // Handler for manual sync
 add_action('wp_ajax_wrms_manual_sync', 'wrms_manual_sync_handler');
 function wrms_manual_sync_handler()
 {
-  check_ajax_referer('wrms_nonce', 'nonce');
-  if (!current_user_can('manage_options')) {
-    wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
-  }
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
 
-  wrms_manual_sync();
-  wp_send_json_success(array('message' => 'Manual sync initiated successfully.'));
+    wrms_manual_sync();
+    wp_send_json_success(array('message' => 'Manual sync initiated successfully.'));
 }
 
 // Handler for generating sitemap
 add_action('wp_ajax_wrms_generate_sitemap', 'wrms_generate_sitemap_handler');
 function wrms_generate_sitemap_handler()
 {
-  check_ajax_referer('wrms_nonce', 'nonce');
-  if (!current_user_can('manage_options')) {
-    wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
-  }
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
 
-  wrms_save_sitemap();
-  wp_send_json_success(array('message' => 'Sitemap generated successfully.'));
+    wrms_save_sitemap();
+    wp_send_json_success(array('message' => 'Sitemap generated successfully.'));
 }
 
 // Handler for checking if a URL exists
 add_action('wp_ajax_wrms_check_url', 'wrms_check_url_handler');
 function wrms_check_url_handler()
 {
-  check_ajax_referer('wrms_nonce', 'nonce');
-  if (!current_user_can('manage_options')) {
-    wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
-  }
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
 
-  $url = isset($_POST['url']) ? esc_url_raw($_POST['url']) : '';
-  if (empty($url)) {
-    wp_send_json_error(array('message' => 'No URL provided.'));
-  }
+    $url = isset($_POST['url']) ? esc_url_raw($_POST['url']) : '';
+    if (empty($url)) {
+        wp_send_json_error(array('message' => 'No URL provided.'));
+    }
 
-  $exists = wrms_url_exists($url);
-  wp_send_json_success(array('exists' => $exists));
+    $exists = wrms_url_exists($url);
+    wp_send_json_success(array('exists' => $exists));
 }
 
 // Handler for getting last sync time
 add_action('wp_ajax_wrms_get_last_sync_time', 'wrms_get_last_sync_time_handler');
 function wrms_get_last_sync_time_handler()
 {
-  check_ajax_referer('wrms_nonce', 'nonce');
-  if (!current_user_can('manage_options')) {
-    wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
-  }
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
 
-  $last_sync_time = wrms_get_last_sync_time();
-  wp_send_json_success(array('last_sync_time' => $last_sync_time));
+    $last_sync_time = wrms_get_last_sync_time();
+    wp_send_json_success(array('last_sync_time' => $last_sync_time));
 }
 
 // Handler for updating last sync time
 add_action('wp_ajax_wrms_update_last_sync_time', 'wrms_update_last_sync_time_handler');
 function wrms_update_last_sync_time_handler()
 {
-  check_ajax_referer('wrms_nonce', 'nonce');
-  if (!current_user_can('manage_options')) {
-    wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
-  }
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
 
-  wrms_update_last_sync_time();
-  wp_send_json_success(array('message' => 'Last sync time updated successfully.'));
+    wrms_update_last_sync_time();
+    wp_send_json_success(array('message' => 'Last sync time updated successfully.'));
 }
 
 // Handler for getting sync progress
 add_action('wp_ajax_wrms_get_sync_progress', 'wrms_get_sync_progress_handler');
 function wrms_get_sync_progress_handler()
 {
-  check_ajax_referer('wrms_nonce', 'nonce');
-  if (!current_user_can('manage_options')) {
-    wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
-  }
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
 
-  $stats = wrms_get_stats();
-  $progress = array(
-    'total_items' => $stats['total_items'],
-    'total_synced' => $stats['total_synced'],
-    'sync_percentage' => $stats['sync_percentage']
-  );
-  wp_send_json_success($progress);
+    $stats = wrms_get_stats();
+    $progress = array(
+        'total_items' => $stats['total_items'],
+        'total_synced' => $stats['total_synced'],
+        'sync_percentage' => $stats['sync_percentage']
+    );
+    wp_send_json_success($progress);
 }
 
 // Handler for cancelling ongoing sync
 add_action('wp_ajax_wrms_cancel_sync', 'wrms_cancel_sync_handler');
 function wrms_cancel_sync_handler()
 {
-  check_ajax_referer('wrms_nonce', 'nonce');
-  if (!current_user_can('manage_options')) {
-    wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
-  }
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
 
-  // Implement a method to cancel the ongoing sync process
-  // This could involve setting a flag in the database that the sync process checks
-  update_option('wrms_cancel_sync', true);
-  wp_send_json_success(array('message' => 'Sync cancellation initiated.'));
+    // Implement a method to cancel the ongoing sync process
+    // This could involve setting a flag in the database that the sync process checks
+    update_option('wrms_cancel_sync', true);
+    wp_send_json_success(array('message' => 'Sync cancellation initiated.'));
 }
 
 // Handler for resetting plugin data
 add_action('wp_ajax_wrms_reset_plugin', 'wrms_reset_plugin_handler');
 function wrms_reset_plugin_handler()
 {
-  check_ajax_referer('wrms_nonce', 'nonce');
-  if (!current_user_can('manage_options')) {
-    wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
-  }
+    check_ajax_referer('wrms_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'You do not have permission to perform this action.'));
+    }
 
-  // Implement a method to reset all plugin data
-  // This could involve deleting all options and post meta related to the plugin
-  delete_option('wrms_auto_sync');
-  delete_option('wrms_settings');
-  delete_option('wrms_stats_cache');
-  delete_option('wrms_last_sync_time');
+    // Implement a method to reset all plugin data
+    // This could involve deleting all options and post meta related to the plugin
+    delete_option('wrms_auto_sync');
+    delete_option('wrms_settings');
+    delete_option('wrms_stats_cache');
+    delete_option('wrms_last_sync_time');
 
-  // Remove all synced meta data
-  global $wpdb;
-  $wpdb->delete($wpdb->postmeta, array('meta_key' => '_wrms_synced'));
-  $wpdb->delete($wpdb->termmeta, array('meta_key' => '_wrms_synced'));
+    // Remove all synced meta data
+    global $wpdb;
+    $wpdb->delete($wpdb->postmeta, array('meta_key' => '_wrms_synced'));
+    $wpdb->delete($wpdb->termmeta, array('meta_key' => '_wrms_synced'));
 
-  wp_send_json_success(array('message' => 'Plugin data reset successfully.'));
+    wp_send_json_success(array('message' => 'Plugin data reset successfully.'));
 }

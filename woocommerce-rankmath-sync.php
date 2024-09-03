@@ -1,6 +1,6 @@
 <?php
 /*
- * Plugin Name:             WooCommerce RankMath Sync
+ * Plugin Name:             WordPress RankMath Sync
  * Plugin URI:              https://github.com/MrGKanev/wo-rank-math-automation/
  * Description:             Copies WooCommerce product, category, WordPress post, page, and media information to RankMath's meta information.
  * Version:                 0.0.5
