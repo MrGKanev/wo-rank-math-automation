@@ -36,7 +36,6 @@ In summary, the plugin checks:
 
 - WordPress 6.0 or higher
 - PHP 7.4 or higher
-- WooCommerce
 - RankMath SEO plugin
 
 ## License
