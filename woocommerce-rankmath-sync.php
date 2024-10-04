@@ -28,6 +28,7 @@ require_once WRMS_PLUGIN_DIR . 'admin/admin-menu.php';
 require_once WRMS_PLUGIN_DIR . 'includes/sync-functions.php';
 require_once WRMS_PLUGIN_DIR . 'admin/settings.php';
 require_once WRMS_PLUGIN_DIR . 'includes/statistics.php';
+require_once WRMS_PLUGIN_DIR . 'includes/statistics-display.php';
 require_once WRMS_PLUGIN_DIR . 'public/rank-math-filters.php';
 require_once WRMS_PLUGIN_DIR . 'includes/helpers.php';
 require_once WRMS_PLUGIN_DIR . 'includes/url-functions.php';
